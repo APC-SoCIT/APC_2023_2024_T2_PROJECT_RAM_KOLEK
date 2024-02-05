@@ -20,9 +20,17 @@ class Team extends Model
         'members' => 'array',
     ];
 
-    public function user() : BelongsTo
+    public function owner() : BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
+    }
+    public function members() : HasMany
+    {
+        return $this->hasMany(User::class, 'members');
+    }
+    public function projectSubmissions() : HasMany
+    {
+        return $this->HasMany(ProjectSubmission::class, 'team_id');
     }
 }
 
