@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Faculty\Resources;
 
-use App\Filament\Resources\ProjectSubmissionResource\Pages;
-use App\Filament\Resources\ProjectSubmissionResource\RelationManagers;
+use App\Filament\Faculty\Resources\ProjectSubmissionResource\Pages;
+use App\Filament\Faculty\Resources\ProjectSubmissionResource\RelationManagers;
 use App\Models\User;
 use App\Models\ProjectSubmission;
+use App\Models\ProjectSubmissionStatus;
 use App\Models\Team;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -16,9 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\FileUpload;
 use Carbon\Carbon;
-use Filament\Resources\Forms\Components\Modal;
-use Illuminate\Support\Facades\Auth;
-
+use Filament\Tables\Filters\SelectFilter;
 
 
 class ProjectSubmissionResource extends Resource
@@ -177,5 +176,20 @@ class ProjectSubmissionResource extends Resource
             'view' => Pages\ViewProjectSubmission::route('/{record}'),
             'edit' => Pages\EditProjectSubmission::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $roles = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+        ->where('users.id', Auth()->id())
+        ->pluck('roles.name')
+        ->toArray();
+
+        if ((in_array('PBL Coordinator', $roles))){
+            return parent::getEloquentQuery();       
+        }
+        return parent::getEloquentQuery()->where('professor_id', auth()->id())
+            ->orWhere('proofreader_id', auth()->id());
     }
 }

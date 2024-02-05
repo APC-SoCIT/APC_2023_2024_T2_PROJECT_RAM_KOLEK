@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProjectSubmissionStatus extends Model
 {
     use HasFactory;
     
     protected $fillable = [
-        'project_id',
+        'project_submission_id',
         'user_id',
         'type',
         'status',
@@ -18,11 +19,11 @@ class ProjectSubmissionStatus extends Model
     
     public function projectSubmission()
     {
-        return $this->belongsTo(ProjectSubmission::class);
+        return $this->belongsTo(ProjectSubmission::class,'project_submission_id');
     }
 
-    public function user()
+    public function user() : BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

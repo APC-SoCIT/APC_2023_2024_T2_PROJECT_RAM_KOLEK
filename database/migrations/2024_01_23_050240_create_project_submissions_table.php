@@ -17,11 +17,11 @@ return new class extends Migration
             $table->string('abstract')->nullable();
             $table->string('categories')->nullable();
             $table->string('subject');
-            $table->string('professor');
-            $table->string('proofreader')->nullable();
+            $table->string('professor_id');
+            $table->string('proofreader_id')->nullable();
             $table->string('attachments')->nullable();
             $table->string('attachments_names')->nullable();
-            $table->string('team');
+            $table->string('team_id');
             $table->string('academic_year');
             $table->string('term');
             $table->string('status')->default('pending');
