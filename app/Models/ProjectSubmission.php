@@ -5,8 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use EightyNine\Approvals\Models\ApprovableModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class ProjectSubmission extends ApprovableModel
+class ProjectSubmission extends Model
 {
     
     use HasFactory;
@@ -15,11 +17,11 @@ class ProjectSubmission extends ApprovableModel
         'abstract',
         'categories',
         'subject',
-        'professor',
-        'proofreader',
+        'professor_id',
+        'proofreader_id',
         'attachments',
         'attachments_names',
-        'team',
+        'team_id',
         'academic_year',
         'term',
         'status',
@@ -29,23 +31,23 @@ class ProjectSubmission extends ApprovableModel
         'attachments_names' => 'array',
     ];
     
-    public function statuses()
+    public function statuses() : HasMany
     {
-        return $this->hasMany(ProjectSubmissionStatus::class);
+        return $this->hasMany(ProjectSubmissionStatus::class, 'project_submission_id');
     }
 
-    public function team()
+    public function team() : BelongsTo
     {
-        return $this->belongsTo(Team::class);
+        return $this->belongsTo(Team::class, 'team_id');
     }
 
-    public function professor()
+    public function professor() : BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'professor_id');
     }
 
     public function proofreader()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'proofreader_id');
     }
 }

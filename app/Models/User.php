@@ -66,10 +66,18 @@ class User extends Authenticatable implements FilamentUser
         'password' => 'hashed',
     ];
 
-    public function projectSubmission() :HasMany
+    public function projectSubmissionProfessor() :HasMany
     {
-        return $this->hasMany(ProjectSubmission::class);
+        return $this->hasMany(ProjectSubmission::class, 'professor_id');
     }
 
-    
+    public function teamAssigned() :BelongsTo
+    {
+        return $this->belongsTo(Team::class, 'team');
+    }
+
+    public function statusReviewed() :HasMany
+    {
+        return $this->hasMany(ProjectSubmissionStatus::class, 'user_id');
+    }
 }

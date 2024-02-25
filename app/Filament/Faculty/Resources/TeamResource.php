@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Faculty\Resources;
 
-use App\Filament\Resources\TeamResource\Pages;
-use App\Filament\Resources\TeamResource\RelationManagers;
+use App\Filament\Faculty\Resources\TeamResource\Pages;
+use App\Filament\Faculty\Resources\TeamResource\RelationManagers;
 use App\Models\Team;
 use App\Models\User;
 use Filament\Forms;
@@ -22,35 +22,20 @@ class TeamResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $professors = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
-            ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
-            ->where('roles.name', 'Professor')
-            ->pluck('users.email', 'users.id')
-            ->toArray();
-        $members = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
-            ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
-            ->where('roles.name', 'Student')
-            ->pluck('users.email', 'users.id')
-            ->toArray();
-
         return $form
             ->schema([
-                Forms\Components\Select::make('user_id')
-                    ->label('Professor')
-                    ->options($professors)
-                    ->searchable()
-                    ->required(),
+                Forms\Components\TextInput::make('user_id')
+                    ->required()
+                    ->numeric(),
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\Select::make('members')
-                    ->label('Members')
-                    ->placeholder('Select Members')
-                    ->searchable()
-                    ->multiple()
-                    ->options($members),
+                Forms\Components\TextInput::make('members')
+                    ->required()
+                    ->maxLength(255),
             ]);
     }
+
 
     public static function table(Table $table): Table
     {
@@ -99,5 +84,18 @@ class TeamResource extends Resource
             'edit' => Pages\EditTeam::route('/{record}/edit'),
         ];
     }
+    
+    public static function getEloquentQuery(): Builder
+    {
+        $roles = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+        ->where('users.id', Auth()->id())
+        ->pluck('roles.name')
+        ->toArray();
 
+        if ((in_array('PBL Coordinator', $roles))||(in_array('Admin', $roles))){
+            return parent::getEloquentQuery();       
+        }
+        return parent::getEloquentQuery()->where('user_id', Auth()->id());
+    }
 }

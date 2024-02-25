@@ -30,7 +30,7 @@ class ViewProjectSubmission extends ViewRecord
             ->action(function (ProjectSubmission $project) {
                 $user = auth()->user();
                 return ProjectSubmissionStatus::create([
-                    'project_id' => $project->id,
+                    'project_submission_id' => $project->id,
                     'user_id' => $user->id,
                     'status' => 'approved',
                     'type' => 'professor',
@@ -41,7 +41,7 @@ class ViewProjectSubmission extends ViewRecord
             ->action(function (ProjectSubmission $project) {
                 $user = auth()->user();
                 return ProjectSubmissionStatus::create([
-                    'project_id' => $project->id,
+                    'project_submission_id' => $project->id,
                     'user_id' => $user->id,
                     'status' => 'returned',
                     'type' => 'professor',
