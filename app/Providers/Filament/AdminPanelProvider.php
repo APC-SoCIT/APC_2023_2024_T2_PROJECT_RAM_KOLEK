@@ -18,7 +18,9 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
-
+use App\Filament\Resources\ProjectSubmissionResource\Widgets\ProjectSubmissionCount;
+use App\Filament\Resources\UserResource\Widgets\RegisteredUsersChart;
+use App\Filament\Resources\UserResource\Widgets\UserCount;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -41,6 +43,7 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 Widgets\AccountWidget::class,
                 Widgets\FilamentInfoWidget::class,
+                RegisteredUsersChart::class,
             ])
             ->middleware([
                 EncryptCookies::class,

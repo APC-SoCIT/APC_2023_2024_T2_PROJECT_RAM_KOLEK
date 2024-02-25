@@ -16,4 +16,10 @@ class ListUsers extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+    function getHeaderWidgets():array
+    {
+        return [
+            UserResource\Widgets\RegisteredUsersChart::class
+        ];
+    }
 }
