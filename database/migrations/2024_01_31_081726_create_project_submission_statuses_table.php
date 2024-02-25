@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('project_submission_statuses', function (Blueprint $table) {
             $table->id();
-            $table->string('project_submission_id');
-            $table->string('user_id');
-            $table->string('type');
-            $table->string('status');
+            $table->foreignId('project_submission_id')->constrained('project_submissions');
+            $table->foreignId('user_id')->constrained('users')->nullable();
+            $table->string('type',10);
+            $table->string('status',25);
+            $table->string('feedback',1000)->nullable();
             $table->timestamps();
         });
     }

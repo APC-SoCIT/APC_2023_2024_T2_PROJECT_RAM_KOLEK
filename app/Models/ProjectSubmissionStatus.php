@@ -15,9 +15,11 @@ class ProjectSubmissionStatus extends Model
         'user_id',
         'type',
         'status',
+        'feedback',
     ];
     
-    public function projectSubmission()
+    
+    public function projectSubmission() : BelongsTo
     {
         return $this->belongsTo(ProjectSubmission::class,'project_submission_id');
     }

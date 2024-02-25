@@ -13,6 +13,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Foundation\Auth;
 
 class TeamResource extends Resource
 {
@@ -22,17 +23,32 @@ class TeamResource extends Resource
 
     public static function form(Form $form): Form
     {
+        $professors = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+        ->where('roles.name', 'Professor')
+        ->pluck('users.email', 'users.id')
+        ->toArray();
+
         return $form
             ->schema([
-                Forms\Components\TextInput::make('user_id')
+                Forms\Components\Select::make('user_id')
+                    ->label('Owner')
+                    ->relationship('owner','email')
+                    ->searchable()
+                    ->default(Auth()->user()->id)
                     ->required()
-                    ->numeric(),
+                    ->preload(),
                 Forms\Components\TextInput::make('name')
+                    ->label('Team Name')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('members')
-                    ->required()
-                    ->maxLength(255),
+                Forms\Components\Select::make('members')
+                    ->label('Members')
+                    ->placeholder('Select Members')
+                    ->searchable()
+                    ->multiple()
+                    ->relationship('members','email')
+                    ->preload(),
             ]);
     }
 
@@ -42,10 +58,10 @@ class TeamResource extends Resource
 
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('owner.email')
                     ->label('Owner')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('name')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -96,6 +112,10 @@ class TeamResource extends Resource
         if ((in_array('PBL Coordinator', $roles))||(in_array('Admin', $roles))){
             return parent::getEloquentQuery();       
         }
+        elseif ((in_array('Student', $roles))){
+            return parent::getEloquentQuery()->whereJsonContains('members', strval(auth()->id()));     
+        }
+
         return parent::getEloquentQuery()->where('user_id', Auth()->id());
     }
 }

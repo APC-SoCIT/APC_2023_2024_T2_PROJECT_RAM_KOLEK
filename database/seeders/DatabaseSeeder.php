@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 
 class DatabaseSeeder extends Seeder
@@ -44,6 +45,12 @@ class DatabaseSeeder extends Seeder
             'name' => 'student2',
             'email' => 'student2@student.apc.edu.ph',
             'password' => '$2y$12$hfx9Baxm0h.75dUv4oqeJulx1RMUJHEBXlpASBOoZG4lj/P2nTp2u',
+        ]);
+
+        DB::table('model_has_roles')->insert([
+            'role_id' => '1',
+            'model_type' => 'App\Models\User',
+            'model_id' => '1',
         ]);
 
     }

@@ -6,6 +6,7 @@ use App\Filament\Resources\ProjectSubmissionResource\Pages;
 use App\Filament\Resources\ProjectSubmissionResource\RelationManagers;
 use App\Models\User;
 use App\Models\ProjectSubmission;
+use App\Models\ProjectSubmissionStatus;
 use App\Models\Team;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -46,7 +47,9 @@ class ProjectSubmissionResource extends Resource
             $academicYears["{$year}-" . ($year + 1)] = "{$year}-" . ($year + 1);
         }
 
+
         return $form
+        
             ->schema([
 
                 Forms\Components\TextInput::make('title'),
@@ -57,7 +60,7 @@ class ProjectSubmissionResource extends Resource
                 ->required(),
                 Forms\Components\Select::make('professor_id')
                 ->label('Professor')
-                ->options($options)
+                ->relationship('professor','email')
                 ->searchable()
                 ->required(),
                 Forms\Components\Select::make('subject')
