@@ -16,7 +16,6 @@ use Filament\Filament;
 
 class ViewProjectSubmission extends ViewRecord
 {
-    use  \EightyNine\Approvals\Traits\HasApprovalHeaderActions;
 
     protected static string $resource = ProjectSubmissionResource::class;
 

@@ -29,7 +29,7 @@ class FacultyPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
-            ->brandLogo(url('storage/images/apc-logo.png'))
+//            ->brandLogo(url('storage/images/apc-logo.png'))
             ->discoverResources(in: app_path('Filament/Faculty/Resources'), for: 'App\\Filament\\Faculty\\Resources')
             ->discoverPages(in: app_path('Filament/Faculty/Pages'), for: 'App\\Filament\\Faculty\\Pages')
             ->pages([
@@ -38,7 +38,6 @@ class FacultyPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Faculty/Widgets'), for: 'App\\Filament\\Faculty\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -53,6 +52,9 @@ class FacultyPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->databaseNotifications()
+            ->databaseNotificationsPolling(interval: '3s')
+            ->sidebarCollapsibleOnDesktop();
     }
 }

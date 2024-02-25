@@ -28,7 +28,7 @@ class User extends Authenticatable implements FilamentUser
             return str_ends_with($this->email, '@student.apc.edu.ph');
         }
         if ($panel->getId() === 'faculty') {
-            return str_ends_with($this->email, '@apc.edu.ph');
+            return true;
         }
  
         return true;
@@ -71,13 +71,32 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(ProjectSubmission::class, 'professor_id');
     }
 
-    public function teamAssigned() :BelongsTo
+    public function teams() :BelongsToMany
     {
-        return $this->belongsTo(Team::class, 'team');
+        return $this->belongsToMany(Team::class, 'user_teams', 'user_id', 'team_id');
     }
 
     public function statusReviewed() :HasMany
     {
         return $this->hasMany(ProjectSubmissionStatus::class, 'user_id');
+    }
+
+    public function proofreadingRequestStatusReviewed() : BelongsToMany
+    {
+        return $this->belongsToMany(ProofreadingRequest::class,'proofreading_request_statuses', 'user_id', 'proofreading_request_id');
+    }
+
+    public function proofreadingRequestOwner() : HasMany
+    {
+        return $this->hasMany(ProofreadingRequest::class,'owner_id');
+    }
+
+    public function executiveDirector() : HasMany
+    {
+        return $this->hasMany(ProofreadingRequest::class,'executive_director_id');
+    }
+    public function proofreadingRequest() : HasMany
+    {
+        return $this->hasMany(ProofreadingRequest::class);
     }
 }
