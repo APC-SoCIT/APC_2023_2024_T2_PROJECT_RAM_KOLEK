@@ -9,13 +9,14 @@ use App\Models\User;
 use App\Models\ProjectSubmission;
 use App\Models\ProjectSubmissionStatus;
 use Illuminate\Database\Eloquent\Model;
+use Filament\Forms;
+use Filament\Forms\Form;
  
 
 
 class ProjectSubmissionStatusHistory extends BaseWidget
 {
     public ?Model $record;
-
     public function table(Table $table): Table
     {
         return $table
@@ -24,7 +25,6 @@ class ProjectSubmissionStatusHistory extends BaseWidget
             )
             ->columns([
                Tables\Columns\TextColumn::make('user.email'),
-               Tables\Columns\TextColumn::make('type'),
                Tables\Columns\TextColumn::make('status')
                ->badge()
                ->color(fn (string $state): string => match ($state) {
@@ -35,6 +35,21 @@ class ProjectSubmissionStatusHistory extends BaseWidget
                Tables\Columns\TextColumn::make('created_at')
                ->dateTime()
                ->sortable(),
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->record($this->record)
+                    ->form([
+                        Forms\Components\TextInput::make('status'),
+                        Forms\Components\Select::make('user')
+                        ->relationship('user','name')
+                        ->label('Name'),
+                        Forms\Components\Select::make('user')
+                        ->relationship('user','email')
+                        ->label('Email'),
+                        Forms\Components\TextInput::make('created_at'),
+                        Forms\Components\MarkdownEditor::make('feedback')
+                    ]),
             ])
             ->defaultPaginationPageOption(5);
     }

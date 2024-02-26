@@ -23,52 +23,53 @@ class TeamResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-        ->schema([
-            Forms\Components\Select::make('user_id')
-                ->label('Owner')
-                ->relationship('owner','email')
-                ->searchable()
-                ->default(Auth()->user()->id)
-                ->required()
-                ->preload(),
-            Forms\Components\TextInput::make('name')
-                ->label('Team Name')
-                ->required()
-                ->maxLength(255),
-            Forms\Components\Select::make('members')
-                ->label('Members')
-                ->placeholder('Select Members')
-                ->searchable()
-                ->multiple()
-                ->relationship('members','email')
-                ->preload(),
-        ]);
-}
+            ->schema([
+                Forms\Components\Select::make('user_id')
+                    ->label('Owner')
+                    ->relationship('owner','email')
+                    ->searchable()
+                    ->default(Auth()->user()->id)
+                    ->required()
+                    ->preload(),
+                Forms\Components\TextInput::make('name')
+                    ->label('Team Name')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\Select::make('members')
+                    ->label('Members')
+                    ->placeholder('Select Members')
+                    ->searchable()
+                    ->multiple()
+                    ->relationship('members','email')
+                    ->preload(),
+            ]);
+    }
 
 
-public static function table(Table $table): Table
-{
+    public static function table(Table $table): Table
+    {
 
-    return $table
-        ->columns([
-            Tables\Columns\TextColumn::make('name')
-                ->searchable(),
-            Tables\Columns\TextColumn::make('owner.email')
-                ->label('Owner')
-                ->searchable(),
-            Tables\Columns\TextColumn::make('created_at')
-                ->dateTime()
-                ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
-            Tables\Columns\TextColumn::make('updated_at')
-                ->dateTime()
-                ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
-        ])
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('owner.email')
+                    ->label('Owner')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
             ->filters([
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
@@ -90,10 +91,10 @@ public static function table(Table $table): Table
         return [
             'index' => Pages\ListTeams::route('/'),
             'create' => Pages\CreateTeam::route('/create'),
+            'view' => Pages\ViewTeam::route('/{record}'),
             'edit' => Pages\EditTeam::route('/{record}/edit'),
         ];
     }
-
     public static function getEloquentQuery(): Builder
     {
         $teams = UserTeam::where('user_id', auth()->id())->pluck('team_id')->toArray();

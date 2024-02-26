@@ -13,7 +13,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Foundation\Auth;
 
 class TeamResource extends Resource
 {
@@ -23,17 +22,11 @@ class TeamResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $professors = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
-        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
-        ->where('roles.name', 'Professor')
-        ->pluck('users.email', 'users.id')
-        ->toArray();
-
         return $form
             ->schema([
                 Forms\Components\Select::make('user_id')
                     ->label('Owner')
-                    ->relationship('owner','email')
+                    ->relationship('getAllowed','email')
                     ->searchable()
                     ->default(Auth()->user()->id)
                     ->required()
@@ -73,7 +66,7 @@ class TeamResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -81,6 +74,8 @@ class TeamResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
     }
@@ -100,7 +95,7 @@ class TeamResource extends Resource
             'edit' => Pages\EditTeam::route('/{record}/edit'),
         ];
     }
-    
+
     public static function getEloquentQuery(): Builder
     {
         $roles = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
@@ -109,13 +104,19 @@ class TeamResource extends Resource
         ->pluck('roles.name')
         ->toArray();
 
-        if ((in_array('PBL Coordinator', $roles))||(in_array('Admin', $roles))){
-            return parent::getEloquentQuery();       
+        if ((in_array('Professor', $roles)))
+        {
+            return parent::getEloquentQuery()->where('user_id', Auth()->id())
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
         }
-        elseif ((in_array('Student', $roles))){
-            return parent::getEloquentQuery()->whereJsonContains('members', strval(auth()->id()));     
+        else{
+            return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
         }
 
-        return parent::getEloquentQuery()->where('user_id', Auth()->id());
     }
 }

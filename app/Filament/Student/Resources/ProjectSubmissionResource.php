@@ -22,6 +22,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Tabs;
 
 
 class ProjectSubmissionResource extends Resource
@@ -50,82 +51,84 @@ class ProjectSubmissionResource extends Resource
         }
         return $form
             ->schema([
-                Section::make('Project Submission Status')
-                ->schema([
-                    Placeholder::make('created on')
-                    ->content(fn (ProjectSubmission $record): string => $record->created_at->toFormattedDateString()),
-                    Placeholder::make('updated on')
-                    ->content(fn (ProjectSubmission $record): string => $record->updated_at->toFormattedDateString()),
-                    Forms\Components\TextInput::make('status')
-                    ->label('Project Status'),
-                    Forms\Components\TextInput::make('proofreader_id')
-                    ->label('Proofreading Status')
+                Tabs::make('Tabs')
+                ->tabs([
+                Tabs\Tab::make('Proofreading Request')
+                    ->schema([
+                        Forms\Components\TextInput::make('title')
+                        ->columnSpanFull()
+                        ->disabled(),
+                        Forms\Components\Select::make('team_id')
+                        ->label('Team')
+                        ->options($teams)
+                        ->searchable()
+                        ->required()
+                        ->disabled(),
+                        Forms\Components\Select::make('professor_id')
+                        ->label('Professor')
+                        ->options($options)
+                        ->searchable()
+                        ->default(Auth()->user()->id)
+                        ->required()
+                        ->disabled(),
+                        Forms\Components\Select::make('subject')
+                        ->options([
+                            'intsdev' => 'INTSDEV',
+                            'syadd' => 'SYADD',
+                            'csproj' => 'CSPROJ',
+                        ])
+                        ->disabled(),
+                        Forms\Components\Select::make('academic_year')
+                        ->label('Academic Year:')
+                        ->default("{$startYear}-" . ($startYear + 1))
+                        ->options($academicYears)
+                        ->required()
+                        ->disabled(),
+                        Forms\Components\Select::make('term')
+                        ->label('Term')
+                        ->options([
+                            '1' => '1st Term',
+                            '2' => '2nd Term',
+                            '3' => '3rd Term',
+                        ])
+                        ->default('1')
+                        ->required()
+                        ->disabled(),
+                        Forms\Components\Select::make('categories')
+                        ->relationship('categories','name')
+                        ->multiple()
+                        ->preload(),
+                        Forms\Components\MarkdownEditor::make('abstract')
+                        ->columnSpanFull(),
+                        FileUpload::make('attachments')
+                        ->multiple()
+                        ->storeFileNamesIn('attachments_names')
+                        ->openable()
+                        ->downloadable()
+                        ->previewable(true)
+                        ->directory('project_files')
+                        ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']),
+                        ])
+                        ->columns(2),
+                    
+                Tabs\Tab::make('Status')
+                    ->schema([
+                        Placeholder::make('created on')
+                        ->content(fn (ProjectSubmission $record): string => $record->created_at->toFormattedDateString()),
+                        Placeholder::make('updated on')
+                        ->content(fn (ProjectSubmission $record): string => $record->updated_at->toFormattedDateString()),
+                        Forms\Components\TextInput::make('status')
+                        ->label('Current Status'),
+                        Forms\Components\TextInput::make('proofreading_status')
+                        ->label('Proofreading Status'),
+                        Forms\Components\MarkdownEditor::make('feedback')
+                        ->label('Feedback')
+                        ->columnSpanFull(),
+                    ])
+                    ->hiddenOn(['create','edit'])
+                    ->columns(2),
                 ])
-                ->hiddenOn(['create','edit'])
-                ->columns(2),
-
-                Section::make('Project Submission Details')
-                ->headerActions([
-                ])
-                ->schema([
-                Forms\Components\TextInput::make('title')
-                ->disabled()
-                ->columnSpanFull(),
-                Forms\Components\Select::make('team_id')
-                ->label('Team')
-                ->options($teams)
-                ->searchable()
-                ->required()
-                ->disabled(),
-                Forms\Components\Select::make('professor_id')
-                ->label('Professor')
-                ->options($options)
-                ->searchable()
-                ->default(Auth()->user()->id)
-                ->required()
-                ->disabled(),
-                Forms\Components\Select::make('subject')
-                ->options([
-                    'ntsdev' => 'NTSDEV',
-                    'syadd' => 'SYADD',
-                    'csproj' => 'CSPROJ',
-                ])
-                ->disabled(),
-                Forms\Components\Select::make('academic_year')
-                ->label('Academic Year:')
-                ->default("{$startYear}-" . ($startYear + 1))
-                ->options($academicYears)
-                ->required()
-                ->disabled(),
-                Forms\Components\Select::make('term')
-                ->label('Term')
-                ->options([
-                    '1' => '1st Term',
-                    '2' => '2nd Term',
-                    '3' => '3rd Term',
-                ])
-                ->default('1')
-                ->required()
-                ->disabled(),
-                Forms\Components\Select::make('categories')
-                ->options([
-                    '1' => 'Artificial Intelligence and Machine Learning',
-                    '2' => 'Systems and Networking',
-                    '3' => 'Security and Privacy',
-                ]),
-                Forms\Components\MarkdownEditor::make('abstract')
-                ->columnSpanFull(),
-
-                FileUpload::make('attachments')
-                ->multiple()
-                ->storeFileNamesIn('attachments_names')
-                ->openable()
-                ->downloadable()
-                ->previewable(true)
-                ->directory('project_files')
-                ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']),
-                ])
-                ->columns(2)
+                ->columnSpanFull()
             ]);
     }
 

@@ -27,6 +27,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Tabs;
 
 class ProjectSubmissionResource extends Resource
 {
@@ -55,77 +56,78 @@ class ProjectSubmissionResource extends Resource
         
         return $form
             ->schema([
-                Section::make('Project Submission Status')
-                ->headerActions([
+                Tabs::make('Tabs')
+                ->tabs([
+                Tabs\Tab::make('Proofreading Request')
+                    ->schema([
+                        Forms\Components\TextInput::make('title')
+                        ->columnSpanFull(),
+                        Forms\Components\Select::make('team_id')
+                        ->label('Team')
+                        ->options($teams)
+                        ->searchable()
+                        ->required(),
+                        Forms\Components\Select::make('professor_id')
+                        ->label('Professor')
+                        ->options($options)
+                        ->searchable()
+                        ->default(Auth()->user()->id)
+                        ->required(),
+                        Forms\Components\Select::make('subject')
+                        ->options([
+                            'intsdev' => 'INTSDEV',
+                            'syadd' => 'SYADD',
+                            'csproj' => 'CSPROJ',
+                        ]),
+                        Forms\Components\Select::make('academic_year')
+                        ->label('Academic Year:')
+                        ->default("{$startYear}-" . ($startYear + 1))
+                        ->options($academicYears)
+                        ->required(),
+                        Forms\Components\Select::make('term')
+                        ->label('Term')
+                        ->options([
+                            '1' => '1st Term',
+                            '2' => '2nd Term',
+                            '3' => '3rd Term',
+                        ])
+                        ->default('1')
+                        ->required(),
+                        Forms\Components\Select::make('categories')
+                        ->relationship('categories','name')
+                        ->multiple()
+                        ->preload(),
+                        Forms\Components\MarkdownEditor::make('abstract')
+                        ->columnSpanFull(),
+                        FileUpload::make('attachments')
+                        ->multiple()
+                        ->storeFileNamesIn('attachments_names')
+                        ->openable()
+                        ->downloadable()
+                        ->previewable(true)
+                        ->directory('project_files')
+                        ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']),
+                        ])
+                        ->columns(2),
+                    
+                Tabs\Tab::make('Status')
+                    ->schema([
+                        Placeholder::make('created on')
+                        ->content(fn (ProjectSubmission $record): string => $record->created_at->toFormattedDateString()),
+                        Placeholder::make('updated on')
+                        ->content(fn (ProjectSubmission $record): string => $record->updated_at->toFormattedDateString()),
+                        Forms\Components\TextInput::make('status')
+                        ->label('Current Status'),
+                        Forms\Components\TextInput::make('proofreading_status')
+                        ->label('Proofreading Status'),
+                        Forms\Components\MarkdownEditor::make('feedback')
+                        ->label('Feedback')
+                        ->columnSpanFull(),
+                    ])
+                    ->hiddenOn(['create','edit'])
+                    ->columns(2),
                 ])
-                ->schema([
-                    Placeholder::make('created on')
-                    ->content(fn (ProjectSubmission $record): string => $record->created_at->toFormattedDateString()),
-                    Placeholder::make('updated on')
-                    ->content(fn (ProjectSubmission $record): string => $record->updated_at->toFormattedDateString()),
-                    Forms\Components\TextInput::make('status')
-                    ->label('Project Status'),
-                    Forms\Components\TextInput::make('proofreading_status')
-                    ->label('Proofreading Status'),
-                ])
-                ->hiddenOn(['create','edit'])
-                ->columns(2),
-
-                Section::make('Project Submission Details')
-                ->headerActions([
-                ])
-                ->schema([
-                Forms\Components\TextInput::make('title')
-                ->columnSpanFull(),
-                Forms\Components\Select::make('team_id')
-                ->label('Team')
-                ->options($teams)
-                ->searchable()
-                ->required(),
-                Forms\Components\Select::make('professor_id')
-                ->label('Professor')
-                ->options($options)
-                ->searchable()
-                ->default(Auth()->user()->id)
-                ->required(),
-                Forms\Components\Select::make('subject')
-                ->options([
-                    'ntsdev' => 'NTSDEV',
-                    'syadd' => 'SYADD',
-                    'csproj' => 'CSPROJ',
-                ]),
-                Forms\Components\Select::make('academic_year')
-                ->label('Academic Year:')
-                ->default("{$startYear}-" . ($startYear + 1))
-                ->options($academicYears)
-                ->required(),
-                Forms\Components\Select::make('term')
-                ->label('Term')
-                ->options([
-                    '1' => '1st Term',
-                    '2' => '2nd Term',
-                    '3' => '3rd Term',
-                ])
-                ->default('1')
-                ->required(),
-                Forms\Components\Select::make('categories')
-                ->options([
-                    '1' => 'Artificial Intelligence and Machine Learning',
-                    '2' => 'Systems and Networking',
-                    '3' => 'Security and Privacy',
-                ]),
-                Forms\Components\MarkdownEditor::make('abstract')
-                ->columnSpanFull(),
-                FileUpload::make('attachments')
-                ->multiple()
-                ->storeFileNamesIn('attachments_names')
-                ->openable()
-                ->downloadable()
-                ->previewable(true)
-                ->directory('project_files')
-                ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']),
-                ])
-                ->columns(2)
+                ->columnSpanFull()
             ]);
     }
 
@@ -135,25 +137,20 @@ class ProjectSubmissionResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false)
                     ->limit(20),
                 Tables\Columns\TextColumn::make('categories')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('subject')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('professor.email')
                     ->label('Professor')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('team.name')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('academic_year')
                     ->searchable()
@@ -161,9 +158,7 @@ class ProjectSubmissionResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('term')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -174,7 +169,6 @@ class ProjectSubmissionResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('status')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false)
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -238,17 +232,16 @@ class ProjectSubmissionResource extends Resource
         ->pluck('roles.name')
         ->toArray();
 
-        if ((in_array('PBL Coordinator', $roles)))
-        {
-            return parent::getEloquentQuery();       
-        }
-        elseif ((in_array('Professor', $roles)))
+        if ((in_array('Professor', $roles)))
         {
             return parent::getEloquentQuery()->where('professor_id', Auth()->id());
         }
-        elseif ((in_array('Student', $roles))){
-            $teams = Team::whereJsonContains('members',strval(Auth()->id()))->pluck('id')->toArray();
-            return parent::getEloquentQuery()->where('team_id', $teams);
+        elseif ((in_array('Librarian', $roles)))
+        {
+            return parent::getEloquentQuery()->where('status', 'approved');
+        }
+        else{
+            return parent::getEloquentQuery(); 
         }
     }
 

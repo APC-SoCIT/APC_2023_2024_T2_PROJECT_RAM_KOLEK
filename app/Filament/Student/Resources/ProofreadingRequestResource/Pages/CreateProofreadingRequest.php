@@ -7,6 +7,9 @@ use App\Models\ProofreadingRequestStatus;
 use App\Models\ProofreadingRequest;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Notifications\Notification;
+use App\Models\User;
+use App\Models\ProjectSubmission;
 
 class CreateProofreadingRequest extends CreateRecord
 {
@@ -24,11 +27,17 @@ class CreateProofreadingRequest extends CreateRecord
             'type' => 'professor',
         ]);
     }
-    protected function mutateFormDataBeforeFill(array $data): array
+    protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['endorser_id'] = $this->record->projectSubmission->professor_id;
         $data['owner_id'] = auth()->user()->id;
-        dd($data);
         return $data;
+    }
+    protected function getCreatedNotification(): ?Notification
+    {
+        $recipient = User::where('id', $this->record->endorser_id)->get();
+        return Notification::make()
+            ->title(auth()->user()->email.' created a proofreading request.')
+            ->body($this->record->projectSubmission->title.' proofreading request created.')
+            ->sendToDatabase($recipient);            
     }
 }

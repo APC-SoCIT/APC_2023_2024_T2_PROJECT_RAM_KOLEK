@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('attachments')->nullable();
             $table->string('attachments_names')->nullable();
             $table->string('status')->default('pending');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

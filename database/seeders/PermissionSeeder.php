@@ -17,7 +17,7 @@ class PermissionSeeder extends Seeder
                             'web_guard' => 'web']);
         Permission::create(['name' => 'view ProjectSubmission',
                             'web_guard' => 'web']);
-        Permission::create(['name' => 'view ProjectSubmission',
+        Permission::create(['name' => 'create ProjectSubmission',
                             'web_guard' => 'web']);
     }
 }

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('proofreading_request_id')->constrained('proofreading_requests');
             $table->foreignId('user_id')->constrained('users')->nullable();
-            $table->string('type',20);
+            $table->string('type',25);
             $table->string('status',25);
             $table->string('feedback')->nullable();
             $table->string('attachments')->nullable();

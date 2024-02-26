@@ -8,6 +8,8 @@ use Filament\Actions\Action;
 use App\Models\ProjectSubmissionStatus;
 use App\Models\ProjectSubmission;
 use App\Models\ProofreadingRequest;
+use App\Models\User;
+use App\Models\UserTeam;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists\Components\Fieldset;
 use Filament\Infolists\Components\TextEntry;
@@ -16,6 +18,7 @@ use Filament\Infolists\Components\RepeatableEntry;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\RichEditor;
+use Filament\Notifications\Notification;
 
 class ViewProjectSubmission extends ViewRecord
 {
@@ -33,7 +36,10 @@ class ViewProjectSubmission extends ViewRecord
         if(!empty($this->record->proofreadingRequestStatus)){
             $data['proofreading_status'] = $this->record->proofreadingRequestStatus->status;
         }
-    
+        if(!empty($this->record->latestStatus)){
+            $data['feedback'] = $this->record->latestStatus->feedback;
+        }
+        
         return $data;
     }
 
@@ -49,7 +55,8 @@ class ViewProjectSubmission extends ViewRecord
                         ->disableAllToolbarButtons()
                     ])
                     ->action(function (array $data) {
-
+                        $usersTeam = UserTeam::where('team_id', $this->record->team_id)->pluck('user_id')->toArray();
+                        $users =  User::whereIn('id', $usersTeam)->get();
                         return [ProjectSubmissionStatus::create([
                             'project_submission_id' => $this->record->id,
                             'user_id' => auth()->user()->id,
@@ -59,11 +66,17 @@ class ViewProjectSubmission extends ViewRecord
                         ]),
                         ProjectSubmission::where('id',$this->record->id)->update([
                             'status' => 'approved',
-                        ])];
+                        ]),
+                        Notification::make()
+                            ->title(auth()->user()->email.' approved a project submission.')
+                            ->body($this->record->title.' has been approved.')
+                            ->sendToDatabase($users)
+
+                    ];
                     })
                     ->visible(function (ProjectSubmission $project): bool {
                         $proofread_status = ProofreadingRequest::where('project_submission_id', $project->id)->pluck('status')->toArray();
-                        if((in_array('finished', $proofread_status))&&($project->status!='approved')){
+                        if((in_array('completed', $proofread_status))&&($project->status!='approved')){
                             $visible = true;
                         }
                         else{
@@ -94,7 +107,7 @@ class ViewProjectSubmission extends ViewRecord
                     ->visible(
                         function (ProjectSubmission $project): bool {
                         $proofread_status = ProofreadingRequest::where('project_submission_id', $project->id)->pluck('status')->toArray();
-                        if(in_array('finished', $proofread_status)){
+                        if(in_array('completed', $proofread_status)){
                             $visible = true;
                         }
                         else{
