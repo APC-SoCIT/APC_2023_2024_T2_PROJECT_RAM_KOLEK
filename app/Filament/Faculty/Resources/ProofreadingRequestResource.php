@@ -22,10 +22,6 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Tabs;
 
-
-use Spatie\Permission\Traits\HasRoles;
-use Illuminate\Foundation\Auth;
-
 class ProofreadingRequestResource extends Resource
 {
     protected static ?string $model = ProofreadingRequest::class;
@@ -47,7 +43,8 @@ class ProofreadingRequestResource extends Resource
                 Tabs\Tab::make('Proofreading Request')
                     ->schema([
                         Forms\Components\Select::make('project_submission_id')
-                            ->relationship('teamProjects', 'title')
+                            ->label('Project Title')
+                            ->relationship('projectSubmission', 'title')
                             ->required()
                             ->columnSpanFull(),
                         Forms\Components\Select::make('owner_id')
@@ -146,12 +143,11 @@ class ProofreadingRequestResource extends Resource
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('received_date')
-                    ->label('Recieved Date')
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: false),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('released_date')
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: false),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('latestStatus.status')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: false)
@@ -168,13 +164,15 @@ class ProofreadingRequestResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
+                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: false),
             ])
             ->filters([
-                //
+                Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -185,6 +183,15 @@ class ProofreadingRequestResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getWidgets(): array
+    {
+        return [
+            ProofreadingRequestResource\Widgets\ProofreadingRequestStatusHistory::class,
+            ProofreadingRequestResource\Widgets\TeamMembers::class,
+            ProofreadingRequestResource\Widgets\Proofreaders::class,
+        ];
     }
 
     public static function getRelations(): array
@@ -203,7 +210,6 @@ class ProofreadingRequestResource extends Resource
             'edit' => Pages\EditProofreadingRequest::route('/{record}/edit'),
         ];
     }
-
     public static function getEloquentQuery(): Builder
     {
         $roles = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
@@ -214,14 +220,37 @@ class ProofreadingRequestResource extends Resource
 
         if ((in_array('Proofreader', $roles)))
         {
-            return parent::getEloquentQuery()->where('proofreader_id', Auth()->id());       
+            return parent::getEloquentQuery()->where('proofreader_id', Auth()->id())
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);     
         }
         elseif ((in_array('Professor', $roles)))
         {
-            return parent::getEloquentQuery()->where('endorser_id', Auth()->id());
+            return parent::getEloquentQuery()->where('endorser_id', Auth()->id())
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]); 
+        }
+        elseif ((in_array('Executive Director', $roles)))
+        {
+            return parent::getEloquentQuery()->where('executive_director_id', Auth()->id())
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+        }
+        elseif ((in_array('English Cluster Head', $roles)))
+        {
+            return parent::getEloquentQuery()->whereIn('status', ['approved','returned for assignment','assigned','returned for assignment','completed'])
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
         }
         else{
-            return parent::getEloquentQuery(); 
+            return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]); 
         }
     }
 }

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('project_submission_id')->constrained('project_submissions');
             $table->foreignId('user_id')->constrained('users')->nullable();
-            $table->string('type',10);
+            $table->string('type',25);
             $table->string('status',25);
             $table->string('feedback',1000)->nullable();
             $table->timestamps();

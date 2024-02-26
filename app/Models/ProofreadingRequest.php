@@ -9,21 +9,23 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProofreadingRequest extends Model
 {
+    use SoftDeletes;
     use HasFactory;
     protected $fillable = [
         'project_submission_id',
-        'owner',
+        'owner_id',
         'phone_number',
-        'endorser',
-        'executive_director',
+        'endorser_id',
+        'executive_director_id',
         'number_pages',
         'number_words',
         'received_date',
         'released_date',
-        'proofreader',
+        'proofreader_id',
         'attachments',
         'attachments_names',
         'status'
@@ -37,6 +39,7 @@ class ProofreadingRequest extends Model
     {
         return $this->belongsTo(ProjectSubmission::class, 'project_submission_id');
     }
+    
     public function statuses() : HasMany
     {
         return $this->hasMany(ProofreadingRequestStatus::class, 'proofreading_request_id');
@@ -56,6 +59,10 @@ class ProofreadingRequest extends Model
     public function endorser() : BelongsTo
     {
         return $this->belongsTo(User::class, 'endorser_id');
+    }
+    public function proofreader() : BelongsTo
+    {
+        return $this->belongsTo(User::class, 'proofreader_id');
     }
     public function executive_director() : BelongsTo
     {
@@ -85,5 +92,35 @@ class ProofreadingRequest extends Model
     public function user() : BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+    public function getRole()
+    {
+        $roles = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+        ->where('users.id', Auth()->id())
+        ->pluck('roles.name')
+        ->toArray();
+        return $roles;
+    }
+    public function getApprover()
+    {
+        return $this->belongsTo(User::class, 'user_id')
+        ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+        ->where('roles.name', 'Executive Director');
+    }
+    public function getProofreaders()
+    {
+        return $this->belongsTo(User::class, 'user_id')
+        ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+        ->where('roles.name', 'Proofreader');
+    }
+    public function getECHead()
+    {
+        return User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+        ->where('roles.name', 'English Cluster Head')
+        ->get();
     }
 }

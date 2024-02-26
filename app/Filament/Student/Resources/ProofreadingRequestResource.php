@@ -47,15 +47,17 @@ class ProofreadingRequestResource extends Resource
                     Tabs\Tab::make('Proofreading Request')
                         ->schema([
                             Forms\Components\Select::make('project_submission_id')
-                                ->relationship('teamProjects', 'title')
+                                ->label('Project Title')
+                                ->relationship('projectSubmission', 'title')
                                 ->required()
-                                ->columnSpanFull(),
+                                ->columnSpanFull()
+                                ->disabledOn(['edit']),
                             Forms\Components\Select::make('owner_id')
                                 ->label('Email')
                                 ->required()
                                 ->relationship('user','email')
                                 ->default(auth()->user()->id)
-                                ->disabledOn(['create']),
+                                ->disabledOn(['create', 'edit']),
                             Forms\Components\Select::make('owner_id')
                                 ->label('Name')
                                 ->required()

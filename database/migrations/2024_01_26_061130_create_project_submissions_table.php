@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('academic_year', 10);
             $table->string('term', 5);
             $table->string('status', 10)->default('pending');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

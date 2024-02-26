@@ -6,14 +6,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use EightyNine\Approvals\Models\ApprovableModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProjectSubmission extends Model
 {
-    
+    use SoftDeletes;
     use HasFactory;
     protected $fillable = [
         'title',
@@ -46,7 +49,7 @@ class ProjectSubmission extends Model
 
     public function teamMembers() : HasManyThrough
     {
-        return $this->hasManyThrough(User::class, Team::class, 'id', 'id', 'team_id', 'members');
+        return $this->hasManyThrough(User::class, UserTeam::class, 'team_id', 'members', 'id', 'id');
     }
 
     public function professor() : BelongsTo
@@ -65,8 +68,24 @@ class ProjectSubmission extends Model
     }
     public function proofreadingRequestStatus() : HasOneThrough
     {
-        return $this->hasOneThrough(ProofreadingRequestStatus::class, ProofreadingRequest::class, 'project_submission_id','proofreading_request_id',  'id','id');
+        return $this->hasOneThrough(ProofreadingRequestStatus::class, ProofreadingRequest::class, 'project_submission_id','proofreading_request_id',  'id','id')->latest();
     }
-
+    public function getRole()
+    {
+        $roles = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+        ->where('users.id', Auth()->id())
+        ->pluck('roles.name')
+        ->toArray();
+        return $roles;
+    }
+    public function latestStatus() :HasOne
+    {
+        return $this->hasOne(ProjectSubmissionStatus::class, 'project_submission_id')->latest();
+    }
+    public function categories(): BelongsToMany
+    {
+        return $this->BelongsToMany(Categories::class, 'project_categories', 'project_submission_id', 'categories_id');
+    }
 
 }

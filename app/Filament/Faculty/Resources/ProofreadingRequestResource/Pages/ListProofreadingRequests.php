@@ -16,4 +16,5 @@ class ListProofreadingRequests extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
 }

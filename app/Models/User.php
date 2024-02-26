@@ -99,4 +99,8 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasMany(ProofreadingRequest::class);
     }
+    public function proofreadingRequestTasks() : HasMany
+    {
+        return $this->hasMany(ProofreadingRequest::class, 'proofreader_id');
+    }
 }

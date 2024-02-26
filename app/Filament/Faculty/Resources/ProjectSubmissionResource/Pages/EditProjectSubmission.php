@@ -5,6 +5,9 @@ namespace App\Filament\Faculty\Resources\ProjectSubmissionResource\Pages;
 use App\Filament\Faculty\Resources\ProjectSubmissionResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Notifications\Notification;
+use App\Models\User;
+use App\Models\UserTeam;
 
 class EditProjectSubmission extends EditRecord
 {
@@ -17,5 +20,13 @@ class EditProjectSubmission extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
-    
+    protected function getSavedNotification(): ?Notification
+    {
+        $usersTeam = UserTeam::where('team_id', $this->record->team_id)->pluck('user_id')->toArray();
+        $users =  User::whereIn('id', $usersTeam)->get();
+        return Notification::make()
+            ->title(auth()->user()->email.' updated a project submission.')
+            ->body($this->record->title.' Updated')
+            ->sendToDatabase($users);
+    }
 }
