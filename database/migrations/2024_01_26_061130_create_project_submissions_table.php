@@ -14,17 +14,16 @@ return new class extends Migration
         Schema::create('project_submissions', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->string('abstract')->nullable();
-            $table->string('categories')->nullable();
-            $table->string('subject');
-            $table->string('professor_id');
-            $table->string('proofreader_id')->nullable();
+            $table->string('abstract', 2500)->nullable();
+            $table->string('categories', 1000)->nullable();
+            $table->string('subject', 10);
+            $table->foreignId('professor_id')->constrained('users');
             $table->string('attachments')->nullable();
             $table->string('attachments_names')->nullable();
-            $table->string('team_id');
-            $table->string('academic_year');
-            $table->string('term');
-            $table->string('status')->default('pending');
+            $table->foreignId('team_id')->constrained('teams');
+            $table->string('academic_year', 10);
+            $table->string('term', 5);
+            $table->string('status', 10)->default('pending');
             $table->timestamps();
         });
     }

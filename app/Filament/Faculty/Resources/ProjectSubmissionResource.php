@@ -7,6 +7,7 @@ use App\Filament\Faculty\Resources\ProjectSubmissionResource\RelationManagers;
 use App\Models\User;
 use App\Models\ProjectSubmission;
 use App\Models\ProjectSubmissionStatus;
+use App\Models\ProofreadingRequest;
 use App\Models\Team;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -18,7 +19,14 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\FileUpload;
 use Carbon\Carbon;
 use Filament\Tables\Filters\SelectFilter;
-
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Components\Placeholder;
+use Filament\Actions\CreateAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\TextInput;
+use Illuminate\Database\Eloquent\Model;
+use Filament\Forms\Components\RichEditor;
 
 class ProjectSubmissionResource extends Resource
 {
@@ -31,7 +39,7 @@ class ProjectSubmissionResource extends Resource
         $options = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
         ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
         ->where('roles.name', 'Professor')
-        ->pluck('users.name', 'users.id')
+        ->pluck('users.email', 'users.id')
         ->toArray();
 
         $teams = Team::pluck('name', 'id')
@@ -44,11 +52,31 @@ class ProjectSubmissionResource extends Resource
         for ($year = $startYear; $year <= $endYear; $year++) {
             $academicYears["{$year}-" . ($year + 1)] = "{$year}-" . ($year + 1);
         }
-
+        
         return $form
             ->schema([
+                Section::make('Project Submission Status')
+                ->headerActions([
+                ])
+                ->schema([
+                    Placeholder::make('created on')
+                    ->content(fn (ProjectSubmission $record): string => $record->created_at->toFormattedDateString()),
+                    Placeholder::make('updated on')
+                    ->content(fn (ProjectSubmission $record): string => $record->updated_at->toFormattedDateString()),
+                    Forms\Components\TextInput::make('status')
+                    ->label('Project Status'),
+                    Forms\Components\TextInput::make('proofreading_status')
+                    ->label('Proofreading Status'),
+                ])
+                ->hiddenOn(['create','edit'])
+                ->columns(2),
 
-                Forms\Components\TextInput::make('title'),
+                Section::make('Project Submission Details')
+                ->headerActions([
+                ])
+                ->schema([
+                Forms\Components\TextInput::make('title')
+                ->columnSpanFull(),
                 Forms\Components\Select::make('team_id')
                 ->label('Team')
                 ->options($teams)
@@ -58,12 +86,13 @@ class ProjectSubmissionResource extends Resource
                 ->label('Professor')
                 ->options($options)
                 ->searchable()
+                ->default(Auth()->user()->id)
                 ->required(),
                 Forms\Components\Select::make('subject')
                 ->options([
+                    'ntsdev' => 'NTSDEV',
+                    'syadd' => 'SYADD',
                     'csproj' => 'CSPROJ',
-                    'softdev' => 'SOFTDEV',
-                    'thesis' => 'THESIS',
                 ]),
                 Forms\Components\Select::make('academic_year')
                 ->label('Academic Year:')
@@ -77,23 +106,27 @@ class ProjectSubmissionResource extends Resource
                     '2' => '2nd Term',
                     '3' => '3rd Term',
                 ])
+                ->default('1')
                 ->required(),
-                Forms\Components\MarkdownEditor::make('abstract')
-                ->columnSpan(2),
                 Forms\Components\Select::make('categories')
                 ->options([
                     '1' => 'Artificial Intelligence and Machine Learning',
                     '2' => 'Systems and Networking',
                     '3' => 'Security and Privacy',
                 ]),
+                Forms\Components\MarkdownEditor::make('abstract')
+                ->columnSpanFull(),
                 FileUpload::make('attachments')
                 ->multiple()
                 ->storeFileNamesIn('attachments_names')
                 ->openable()
                 ->downloadable()
                 ->previewable(true)
-                ->directory('project_files'),
-                ]);
+                ->directory('project_files')
+                ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']),
+                ])
+                ->columns(2)
+            ]);
     }
 
     public static function table(Table $table): Table
@@ -103,7 +136,8 @@ class ProjectSubmissionResource extends Resource
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: false),
+                    ->toggleable(isToggledHiddenByDefault: false)
+                    ->limit(20),
                 Tables\Columns\TextColumn::make('categories')
                     ->searchable()
                     ->sortable()
@@ -114,11 +148,6 @@ class ProjectSubmissionResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('professor.email')
                     ->label('Professor')
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: false),
-                Tables\Columns\TextColumn::make('proofreader_id')
-                    ->label('Proofreader')
                     ->searchable()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
@@ -134,10 +163,7 @@ class ProjectSubmissionResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('status')
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: false),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -146,6 +172,17 @@ class ProjectSubmissionResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
+                Tables\Columns\TextColumn::make('status')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: false)
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'gray',
+                        'returned' => 'warning',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                    }),
             ])
             ->filters([
 
@@ -153,6 +190,7 @@ class ProjectSubmissionResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -161,10 +199,23 @@ class ProjectSubmissionResource extends Resource
             ]);
     }
 
+    protected function getProjectId(ProjectSubmission $project) 
+    {
+        return $project->id;
+    }
+
+    public static function getWidgets(): array
+    {
+        return [
+            ProjectSubmissionResource\Widgets\ProjectSubmissionStatusHistory::class,
+            ProjectSubmissionResource\Widgets\TeamMembers::class,
+        ];
+    }
+
     public static function getRelations(): array
     {
         return [
-            //
+
         ];
     }
 
@@ -175,6 +226,7 @@ class ProjectSubmissionResource extends Resource
             'create' => Pages\CreateProjectSubmission::route('/create'),
             'view' => Pages\ViewProjectSubmission::route('/{record}'),
             'edit' => Pages\EditProjectSubmission::route('/{record}/edit'),
+            'view-status' => Pages\ViewProjectSubmissionStatus::route('/{record}/view-status'),
         ];
     }
 
@@ -186,10 +238,18 @@ class ProjectSubmissionResource extends Resource
         ->pluck('roles.name')
         ->toArray();
 
-        if ((in_array('PBL Coordinator', $roles))){
+        if ((in_array('PBL Coordinator', $roles)))
+        {
             return parent::getEloquentQuery();       
         }
-        return parent::getEloquentQuery()->where('professor_id', auth()->id())
-            ->orWhere('proofreader_id', auth()->id());
+        elseif ((in_array('Professor', $roles)))
+        {
+            return parent::getEloquentQuery()->where('professor_id', Auth()->id());
+        }
+        elseif ((in_array('Student', $roles))){
+            $teams = Team::whereJsonContains('members',strval(Auth()->id()))->pluck('id')->toArray();
+            return parent::getEloquentQuery()->where('team_id', $teams);
+        }
     }
+
 }

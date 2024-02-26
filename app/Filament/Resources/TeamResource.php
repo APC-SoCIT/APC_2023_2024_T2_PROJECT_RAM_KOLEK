@@ -36,8 +36,8 @@ class TeamResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Select::make('user_id')
-                    ->label('Professor')
-                    ->options($professors)
+                    ->label('Owner')
+                    ->relationship('owner','email')
                     ->searchable()
                     ->required(),
                 Forms\Components\TextInput::make('name')
@@ -48,7 +48,7 @@ class TeamResource extends Resource
                     ->placeholder('Select Members')
                     ->searchable()
                     ->multiple()
-                    ->options($members),
+                    ->relationship('members','email'),
             ]);
     }
 
@@ -99,5 +99,17 @@ class TeamResource extends Resource
             'edit' => Pages\EditTeam::route('/{record}/edit'),
         ];
     }
+    public static function getEloquentQuery(): Builder
+    {
+        $roles = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+        ->where('users.id', Auth()->id())
+        ->pluck('roles.name')
+        ->toArray();
 
+        if ((in_array('PBL Coordinator', $roles))||(in_array('Admin', $roles))){
+            return parent::getEloquentQuery();       
+        }
+        return parent::getEloquentQuery()->where('user_id', auth()->id());
+    }
 }

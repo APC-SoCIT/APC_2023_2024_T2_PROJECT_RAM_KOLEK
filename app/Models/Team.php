@@ -14,7 +14,6 @@ class Team extends Model
     protected $fillable = [
         'user_id',
         'name',
-        'members',
     ];
     protected $casts = [
         'members' => 'array',
@@ -24,10 +23,11 @@ class Team extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
-    public function members() : HasMany
+    public function members() : BelongsToMany
     {
-        return $this->hasMany(User::class, 'members');
+        return $this->BelongsToMany(User::class, 'user_teams', 'team_id', 'user_id')->withTimestamps();
     }
+    
     public function projectSubmissions() : HasMany
     {
         return $this->HasMany(ProjectSubmission::class, 'team_id');
