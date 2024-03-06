@@ -93,6 +93,8 @@ class ViewProjectSubmission extends ViewRecord
                         ->disableAllToolbarButtons()
                     ])
                     ->action(function (array $data) {
+                        $usersTeam = UserTeam::where('team_id', $this->record->team_id)->pluck('user_id')->toArray();
+                        $users =  User::whereIn('id', $usersTeam)->get();
                         return [ProjectSubmissionStatus::create([
                             'project_submission_id' => $this->record->id,
                             'user_id' => auth()->user()->id,
@@ -102,7 +104,12 @@ class ViewProjectSubmission extends ViewRecord
                         ]),
                         ProjectSubmission::where('id',$this->record->id)->update([
                             'status' => 'returned',
-                        ])];
+                        ]),
+                        Notification::make()
+                        ->title(auth()->user()->email.' returned a project submission.')
+                        ->body($this->record->title.' has been returned.')
+                        ->sendToDatabase($users)
+                    ];
                     })
                     ->visible(
                         function (ProjectSubmission $project): bool {

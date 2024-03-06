@@ -54,6 +54,7 @@ class StudentPanelProvider extends PanelProvider
             ])
             ->databaseNotifications()
             ->databaseNotificationsPolling(interval: '3s')
-            ->sidebarCollapsibleOnDesktop();
+            ->sidebarCollapsibleOnDesktop()
+            ->darkMode(false);
     }
 }
