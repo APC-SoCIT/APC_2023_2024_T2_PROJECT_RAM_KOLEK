@@ -1,0 +1,74 @@
+@import '/vendor/filament/filament/resources/css/theme.css';
+
+@config 'tailwind.config.js';
+
+.fi-simple-main-ctn {
+    @apply bg-gray-200 !important;
+}
+
+.fi-topbar nav{
+    @apply bg-blue-900 !important;
+}
+
+.dark .fi-topbar{
+    @apply bg-blue-900 !important;
+}
+
+.dark .fi-sidebar-nav {
+    @apply bg-blue-900 !important;
+}
+
+.dark .fi-sidebar-header {
+    @apply bg-blue-900 !important;
+}
+
+.fi-sidebar-nav {
+    @apply bg-gray-800 !important;
+}
+
+.fi-sidebar-header {
+    @apply bg-gray-800 !important;
+    @apply drop-shadow-lg !important;
+}
+
+.fi-layout {
+    @apply bg-gray-200 !important;
+}
+
+.fi-sidebar-item-label {
+    @apply text-slate-100 !important;
+}
+
+.fi-active .fi-sidebar-item-button {
+    @apply bg-slate-100/10 !important;
+}
+
+.fi-active.fi-tabs-item {
+    @apply bg-slate-100/10 !important;  
+}
+
+.fi-sidebar-item a:hover {
+    @apply bg-slate-100/10 !important;
+}
+
+.fi-ta-header-ctn {
+    @apply bg-blue-900 !important;
+}
+
+.fi-tabs {
+    @apply bg-blue-900 !important;
+    @apply rounded-t-lg !important;
+}
+
+.fi-sidebar-header .fi-logo {
+    @apply text-slate-100 !important;
+}
+
+.fi-tabs-item-label {
+    @apply text-slate-100 !important; 
+}
+
+.fi-ta-header-heading
+{
+    @apply text-slate-100 !important; 
+}

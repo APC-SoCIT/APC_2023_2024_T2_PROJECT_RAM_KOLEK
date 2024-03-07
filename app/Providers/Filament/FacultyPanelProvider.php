@@ -55,6 +55,8 @@ class FacultyPanelProvider extends PanelProvider
             ])
             ->databaseNotifications()
             ->databaseNotificationsPolling(interval: '3s')
-            ->sidebarCollapsibleOnDesktop();
+            ->sidebarCollapsibleOnDesktop()
+            ->viteTheme('resources/css/filament/faculty/theme.css')
+            ->darkMode(false);
     }
 }

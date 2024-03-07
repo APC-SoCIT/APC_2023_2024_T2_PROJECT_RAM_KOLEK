@@ -65,7 +65,8 @@ class AdminPanelProvider extends PanelProvider
             ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
             ->databaseNotifications()
             ->databaseNotificationsPolling(interval: '3s')
-            ->sidebarCollapsibleOnDesktop();;
+            ->sidebarCollapsibleOnDesktop()
+            ->darkMode(false);
             
     }
 }
