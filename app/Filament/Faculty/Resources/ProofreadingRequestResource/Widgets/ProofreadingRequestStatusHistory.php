@@ -56,7 +56,16 @@ class ProofreadingRequestStatusHistory extends BaseWidget
                         ->label('Email'),
                         Forms\Components\DateTimePicker::make('created_at')
                         ,
-                        Forms\Components\MarkdownEditor::make('feedback')
+                        Forms\Components\MarkdownEditor::make('feedback'),
+                        Forms\Components\FileUpload::make('attachments')
+                        ->multiple()
+                        ->storeFileNamesIn('attachments_names')
+                        ->openable()
+                        ->downloadable()
+                        ->previewable(true)
+                        ->directory('proofreading_files')
+                        ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']),
+
                     ]),
             ])
             ->defaultPaginationPageOption(5);

@@ -48,10 +48,7 @@ class ProofreadingRequest extends Model
     {
         return $this->hasOne(ProofreadingRequestStatus::class, 'proofreading_request_id')->latest();
     }
-    public function team() : HasOneThrough
-    {
-        return $this->hasOneThrough(Team::class, ProjectSubmission::class, 'team_id', 'id', 'id', 'team_id');
-    }
+
     public function owner() : BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');

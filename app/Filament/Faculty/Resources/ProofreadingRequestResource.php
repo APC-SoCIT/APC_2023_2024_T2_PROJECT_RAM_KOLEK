@@ -26,7 +26,7 @@ class ProofreadingRequestResource extends Resource
 {
     protected static ?string $model = ProofreadingRequest::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-document';
 
     public static function form(Form $form): Form
     {
@@ -114,6 +114,15 @@ class ProofreadingRequestResource extends Resource
                         Forms\Components\MarkdownEditor::make('feedback')
                         ->label('Feedback')
                         ->columnSpanFull(),
+                        FileUpload::make('proofread_attachments')
+                        ->multiple()
+                        ->storeFileNamesIn('attachments_names')
+                        ->openable()
+                        ->downloadable()
+                        ->previewable(true)
+                        ->directory('proofreading_files')
+                        ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']),
+
                     ])
                     ->hiddenOn(['create','edit'])
                     ->columns(2),

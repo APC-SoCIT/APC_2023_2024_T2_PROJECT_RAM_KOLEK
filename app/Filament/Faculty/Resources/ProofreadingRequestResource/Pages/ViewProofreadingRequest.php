@@ -38,6 +38,8 @@ class ViewProofreadingRequest extends ViewRecord
         if(!empty($this->record->latestStatus)){
             $data['proofreading_status'] = $this->record->latestStatus->status;
             $data['feedback'] = $this->record->latestStatus->feedback;
+            $data['proofread_attachments'] = $this->record->latestStatus->attachments;
+            $data['proofread_attachments'] = $this->record->latestStatus->attachments_names;
         }
         
         return $data;
@@ -67,8 +69,9 @@ class ViewProofreadingRequest extends ViewRecord
                     ])
                     ->action(function (array $data) {
                         $usersTeam = UserTeam::where('team_id', $this->record->projectSubmission->team_id)->pluck('user_id')->toArray();
-                        $users =  User::whereIn('id', $usersTeam)->where('id', $this->record->executive_director_id)->get();
-
+                        $users =  User::whereIn('id', $usersTeam)->get();
+                        $xd = User::where('id', $this->record->executive_director_id)->get();
+                        $users = $users->merge($xd);
                         return [ProofreadingRequestStatus::create([
                             'proofreading_request_id' => $this->record->id,
                             'user_id' => auth()->user()->id,
@@ -81,10 +84,10 @@ class ViewProofreadingRequest extends ViewRecord
                             'executive_director_id' => $data['executive_director_id'],
                         ]),
                         Notification::make()
-                            ->title(auth()->user()->email.' endorsed a project submission.')
-                            ->body($this->record->title.' has been endorsed.')
-                            ->sendToDatabase($users)
-                    ];
+                            ->title(auth()->user()->email.' endorsed a proofreading requests.')
+                            ->body($this->record->projectSubmission->title.' has been endorsed.')
+                            ->sendToDatabase($users),
+                        ];
                     })
                     ->visible(function (ProofreadingRequest $request): bool {
                         if((($this->record->latestStatus->status == 'pending')||($this->record->latestStatus->status == 'returned for endorsement'))&&($request->endorser_id == auth()->user()->id)){
@@ -96,7 +99,8 @@ class ViewProofreadingRequest extends ViewRecord
                         return $visible;
                     }),
                     //endorse return
-                    Action::make('return')
+                    Action::make('return endorse')
+                    ->label('Return')
                     ->color('warning')
                     ->requiresConfirmation()
                     ->form([
@@ -106,7 +110,9 @@ class ViewProofreadingRequest extends ViewRecord
                     ])
                     ->action(function (array $data) {
                         $usersTeam = UserTeam::where('team_id', $this->record->projectSubmission->team_id)->pluck('user_id')->toArray();
-                        $users =  User::whereIn('id', $usersTeam)->where('id', $this->record->executive_director_id)->get();
+                        $users =  User::whereIn('id', $usersTeam)->get();
+                        $xd = User::where('id', $this->record->executive_director_id)->get();
+                        $users = $users->merge($xd);
                         return [ProofreadingRequestStatus::create([
                             'proofreading_request_id' => $this->record->id,
                             'user_id' => auth()->user()->id,
@@ -118,8 +124,8 @@ class ViewProofreadingRequest extends ViewRecord
                             'status' => 'returned for endorsement',
                         ]),
                         Notification::make()
-                        ->title(auth()->user()->email.' returned a project submission.')
-                        ->body($this->record->title.' has been returned for endorsement.')
+                        ->title(auth()->user()->email.' returned a proofreading request.')
+                        ->body($this->record->projectSubmission->title.' has been returned for endorsement.')
                         ->sendToDatabase($users)
                     ];
                     })
@@ -145,6 +151,13 @@ class ViewProofreadingRequest extends ViewRecord
                     ->action(function (array $data) {
                         $usersTeam = UserTeam::where('team_id', $this->record->projectSubmission->team_id)->pluck('user_id')->toArray();
                         $users =  User::whereIn('id', $usersTeam)->get();
+                        $prof = User::where('id', $this->record->projectSubmission->professor_id)->get();
+                        $ec= User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+                        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+                        ->where('roles.name', 'English Cluster Head')
+                        ->get();
+                        $users = $users->merge($ec)->merge($prof);
+
                         return [ProofreadingRequestStatus::create([
                             'proofreading_request_id' => $this->record->id,
                             'user_id' => auth()->user()->id,
@@ -156,8 +169,8 @@ class ViewProofreadingRequest extends ViewRecord
                             'status' => 'approved',
                         ]),
                         Notification::make()
-                        ->title(auth()->user()->email.' approved a project submission.')
-                        ->body($this->record->title.' has been approved.')
+                        ->title(auth()->user()->email.' approved a proofreading request.')
+                        ->body($this->record->projectSubmission->title.' has been approved.')
                         ->sendToDatabase($users),
                     ];
                     })
@@ -171,7 +184,8 @@ class ViewProofreadingRequest extends ViewRecord
                         return $visible;
                     }),
                     //xd return
-                    Action::make('return')
+                    Action::make('return approve')
+                    ->label('Return')
                     ->color('warning')
                     ->requiresConfirmation()
                     ->form([
@@ -180,7 +194,14 @@ class ViewProofreadingRequest extends ViewRecord
                         ->disableAllToolbarButtons()
                     ])
                     ->action(function (array $data) {
-
+                        $usersTeam = UserTeam::where('team_id', $this->record->projectSubmission->team_id)->pluck('user_id')->toArray();
+                        $users =  User::whereIn('id', $usersTeam)->get();
+                        $prof = User::where('id', $this->record->projectSubmission->professor_id)->get();
+                        $ec= User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+                        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+                        ->where('roles.name', 'English Cluster Head')
+                        ->get();
+                        $users = $users->merge($ec)->merge($prof);
                         return [ProofreadingRequestStatus::create([
                             'proofreading_request_id' => $this->record->id,
                             'user_id' => auth()->user()->id,
@@ -190,7 +211,11 @@ class ViewProofreadingRequest extends ViewRecord
                         ]),
                         ProofreadingRequest::where('id',$this->record->id)->update([
                             'status' => 'returned for approval',
-                        ])];
+                        ]),
+                        Notification::make()
+                        ->title(auth()->user()->email.' returned a prooforeading request.')
+                        ->body($this->record->projectSubmission->title.' has been returned for approval.')
+                        ->sendToDatabase($users),];
                     })
                     ->visible(function (ProofreadingRequest $request): bool {
                         if((($this->record->latestStatus->status == 'endorsed')||($this->record->latestStatus->status == 'returned for approval')||($this->record->latestStatus->status == 'approved'))&&($request->executive_director_id==auth()->user()->id)){
@@ -214,6 +239,15 @@ class ViewProofreadingRequest extends ViewRecord
                         ->disableAllToolbarButtons(),
                     ])
                     ->action(function (array $data) {
+                        $usersTeam = UserTeam::where('team_id', $this->record->projectSubmission->team_id)->pluck('user_id')->toArray();
+                        $users =  User::whereIn('id', $usersTeam)->get();
+                        $prof = User::where('id', $this->record->projectSubmission->professor_id)->get();
+                        $ec= User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+                        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+                        ->where('roles.name', 'English Cluster Head')
+                        ->get();
+                        $proof = User::where('id', $this->record->proofreader_id)->get();
+                        $users = $users->merge($ec)->merge($prof)->merge($proof);
                         return [ProofreadingRequestStatus::create([
                             'proofreading_request_id' => $this->record->id,
                             'user_id' => auth()->user()->id,
@@ -224,7 +258,11 @@ class ViewProofreadingRequest extends ViewRecord
                         ProofreadingRequest::where('id',$this->record->id)->update([
                             'status' => 'assigned',
                             'proofreader_id' => $data['proofreader_id'],
-                        ])];
+                        ]),
+                        Notification::make()
+                        ->title(auth()->user()->email.' assigned a proofreading request.')
+                        ->body($this->record->projectSubmission->title.' has been assigned.')
+                        ->sendToDatabase($users),];
                     })
                     ->visible(function (ProofreadingRequest $request): bool {
                         if((($this->record->latestStatus->status == 'approved')||($this->record->latestStatus->status == 'returned for assignment'))&&(in_array('English Cluster Head', $this->record->getRole()))){
@@ -236,7 +274,8 @@ class ViewProofreadingRequest extends ViewRecord
                         return $visible;
                     }),
                     //ec head return
-                    Action::make('return')
+                    Action::make('return assign')
+                    ->label('Return')
                     ->color('warning')
                     ->requiresConfirmation()
                     ->form([
@@ -245,6 +284,15 @@ class ViewProofreadingRequest extends ViewRecord
                         ->disableAllToolbarButtons()
                     ])
                     ->action(function (array $data) {
+                        $usersTeam = UserTeam::where('team_id', $this->record->projectSubmission->team_id)->pluck('user_id')->toArray();
+                        $users =  User::whereIn('id', $usersTeam)->get();
+                        $prof = User::where('id', $this->record->projectSubmission->professor_id)->get();
+                        $ec= User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+                        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+                        ->where('roles.name', 'English Cluster Head')
+                        ->get();
+                        $proof = User::where('id', $this->record->proofreader_id)->get();
+                        $users = $users->merge($ec)->merge($prof)->merge($proof);
                         return [ProofreadingRequestStatus::create([
                             'proofreading_request_id' => $this->record->id,
                             'user_id' => auth()->user()->id,
@@ -254,10 +302,14 @@ class ViewProofreadingRequest extends ViewRecord
                         ]),
                         ProofreadingRequest::where('id',$this->record->id)->update([
                             'status' => 'returned for assignment',
-                        ])];
+                        ]),
+                        Notification::make()
+                        ->title(auth()->user()->email.' returned a prooforeading request.')
+                        ->body($this->record->projectSubmission->title.' has been returned for assignmentsdea.')
+                        ->sendToDatabase($users),];
                     })
                     ->visible(function (ProofreadingRequest $request): bool {
-                        if((($this->record->latestStatus->status == 'approved')||($this->record->latestStatus->status == 'returned for assigment')||($this->record->latestStatus->status == 'assigned'))&&(in_array('English Cluster Head', $this->record->getRole()))){
+                        if((($this->record->latestStatus->status == 'approved')||($this->record->latestStatus->status == 'returned for assignment')||($this->record->latestStatus->status == 'assigned'))&&(in_array('English Cluster Head', $this->record->getRole()))){
                             $visible = true;
                         }
                         else{
@@ -276,13 +328,22 @@ class ViewProofreadingRequest extends ViewRecord
                         ->openable()
                         ->downloadable()
                         ->previewable(true)
-                        ->directory('project_files')
+                        ->directory('proofreading_files')
                         ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']),
                         RichEditor::make('feedback')
                         ->maxLength('255')
                         ->disableAllToolbarButtons(),
                     ])
                     ->action(function (array $data) {
+                        $usersTeam = UserTeam::where('team_id', $this->record->projectSubmission->team_id)->pluck('user_id')->toArray();
+                        $users =  User::whereIn('id', $usersTeam)->get();
+                        $prof = User::where('id', $this->record->projectSubmission->professor_id)->get();
+                        $ec= User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+                        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+                        ->where('roles.name', 'English Cluster Head')
+                        ->get();
+                        $proof = User::where('id', $this->record->proofreader_id)->get();
+                        $users = $users->merge($ec)->merge($prof)->merge($proof);
                         return [ProofreadingRequestStatus::create([
                             'proofreading_request_id' => $this->record->id,
                             'user_id' => auth()->user()->id,
@@ -293,7 +354,11 @@ class ViewProofreadingRequest extends ViewRecord
                         ]),
                         ProofreadingRequest::where('id',$this->record->id)->update([
                             'status' => 'completed',
-                        ])];
+                        ]),
+                        Notification::make()
+                        ->title(auth()->user()->email.' returned a proofreading request.')
+                        ->body($this->record->projectSubmission->title.' has been completed proofreading.')
+                        ->sendToDatabase($users),];
                     })
                     ->visible(function (ProofreadingRequest $request): bool {
                         if((($this->record->latestStatus->status == 'assigned'))&&($request->proofreader_id==auth()->id())){
