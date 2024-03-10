@@ -170,6 +170,7 @@ return [
         App\Providers\Filament\AdminPanelProvider::class,
         App\Providers\Filament\StudentPanelProvider::class,
         App\Providers\Filament\FacultyPanelProvider::class,
+        App\Providers\Filament\AppPanelProvider::class,
         App\Providers\RouteServiceProvider::class,
     ])->toArray(),
 
