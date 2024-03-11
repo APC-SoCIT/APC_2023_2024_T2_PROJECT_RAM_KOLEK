@@ -13,22 +13,29 @@ use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use ShiftOneLabs\LaravelCascadeDeletes\CascadesDeletes;
 
 class ProjectSubmission extends Model
 {
     use SoftDeletes;
     use HasFactory;
+    use CascadesDeletes;
+
+
+
     protected $fillable = [
         'title',
         'abstract',
         'categories',
+        'school',
+        'program',
+        'section',
         'subject',
+        'academic_year',
         'professor_id',
-        'proofreader_id',
         'attachments',
         'attachments_names',
         'team_id',
-        'academic_year',
         'term',
         'status',
     ];

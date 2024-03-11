@@ -9,18 +9,27 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use ShiftOneLabs\LaravelCascadeDeletes\CascadesDeletes;
+
 class Team extends Model
 {
     use SoftDeletes;
     use HasFactory;
+    use CascadesDeletes;
+
+    protected $cascadeDeletes = ['projectSubmissions', 'proofreadingRequest'];
+
     protected $fillable = [
         'user_id',
         'name',
+        'school',
+        'section',
+        'program',
+        'academic_year',
     ];
     protected $casts = [
-        'members' => 'array',
+        'section' => 'array',
     ];
-
     public function getAllowed()
     {
         return $this->belongsTo(User::class, 'user_id')
@@ -38,10 +47,14 @@ class Team extends Model
         $search = '@student';
         return $this->BelongsToMany(User::class, 'user_teams', 'team_id', 'user_id')->where('email','LIKE', "%{$search}%")->withTimestamps();
     }
-    
+
     public function projectSubmissions() : HasMany
     {
         return $this->HasMany(ProjectSubmission::class, 'team_id');
+    }
+    public function proofreadingRequest() : HasMany
+    {
+        return $this->hasMany(ProofreadingRequest::class, 'team_id');
     }
 
     public function getMembers() : HasMany

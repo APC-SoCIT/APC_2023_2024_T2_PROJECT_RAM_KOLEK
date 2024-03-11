@@ -6,6 +6,7 @@ use App\Filament\Faculty\Resources\ProofreadingRequestResource\Pages;
 use App\Filament\Faculty\Resources\ProofreadingRequestResource\RelationManagers;
 use App\Models\ProofreadingRequest;
 use App\Models\Team;
+use App\Models\UserTeam;
 use App\Models\User;
 use App\Models\ProjectSubmission;
 use Filament\Forms;
@@ -22,6 +23,9 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Tabs;
 
+use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Foundation\Auth;
+
 class ProofreadingRequestResource extends Resource
 {
     protected static ?string $model = ProofreadingRequest::class;
@@ -35,100 +39,107 @@ class ProofreadingRequestResource extends Resource
         ->where('users.id', Auth()->id())
         ->pluck('roles.name')
         ->toArray();
-
+        
         return $form
-        ->schema([
-            Tabs::make('Tabs')
-            ->tabs([
-                Tabs\Tab::make('Proofreading Request')
-                    ->schema([
-                        Forms\Components\Select::make('project_submission_id')
-                            ->label('Project Title')
-                            ->relationship('projectSubmission', 'title')
-                            ->required()
-                            ->columnSpanFull(),
-                        Forms\Components\Select::make('owner_id')
-                            ->label('Email')
-                            ->required()
-                            ->relationship('user','email')
-                            ->default(auth()->user()->id)
-                            ->disabledOn(['create']),
-                        Forms\Components\Select::make('owner_id')
-                            ->label('Name')
-                            ->required()
-                            ->relationship('user','name')
-                            ->disabledOn(['create','edit'])
-                            ->hiddenOn(['create']),
-                        Forms\Components\TextInput::make('phone_number')
-                            ->tel()
-                            ->required()
-                            ->maxLength(15),
-                        Forms\Components\Select::make('endorser_id')
-                            ->label('Professor')
-                            ->relationship('user','email')
-                            ->hiddenOn(['create'])
-                            ->disabledOn(['edit']),
-                        Forms\Components\Select::make('executive_director_id')
-                            ->label('Executive Director')
-                            ->relationship('user','email')
-                            ->hiddenOn(['create'])
-                            ->disabledOn(['edit']),
-                        Forms\Components\Select::make('proofreader_id')
-                            ->label('Proofreader')
-                            ->relationship('user','email')
-                            ->hiddenOn(['create'])
-                            ->disabledOn(['edit']),
-                        Forms\Components\TextInput::make('number_pages')
-                            ->label('Number of Pages')
-                            ->required()
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(999999999),
-                        Forms\Components\TextInput::make('number_words')
-                            ->label('Number of Words')
-                            ->required()
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(999999999),
+            ->schema([
+                Tabs::make('Tabs')
+                ->tabs([
+                    Tabs\Tab::make('Proofreading Request')
+                        ->schema([
+                            Forms\Components\Select::make('project_submission_id')
+                                ->label('Project Title')
+                                ->relationship('projectSubmission', 'title')
+                                ->required()
+                                ->columnSpanFull()
+                                ->disabledOn(['edit']),
+                            Forms\Components\Select::make('team_id')
+                                ->label('Team')
+                                ->relationship('team','name')
+                                ->hiddenOn(['create'])
+                                ->disabledOn(['edit']),
+                            Forms\Components\TextInput::make('phone_number')
+                                ->tel()
+                                ->required()
+                                ->maxLength(15),
+                            Forms\Components\Select::make('endorser_id')
+                                ->label('Professor')
+                                ->relationship('user','email')
+                                ->hiddenOn(['create'])
+                                ->disabledOn(['edit']),
+                            Forms\Components\Select::make('executive_director_id')
+                                ->label('Executive Director')
+                                ->relationship('user','email')
+                                ->hiddenOn(['create'])
+                                ->disabledOn(['edit']),
+                            Forms\Components\Select::make('proofreader_id')
+                                ->label('Proofreader')
+                                ->relationship('user','email')
+                                ->hiddenOn(['create'])
+                                ->disabledOn(['edit']),
+                            Forms\Components\TextInput::make('number_pages')
+                                ->label('Number of Pages')
+                                ->required()
+                                ->numeric()
+                                ->minValue(1)
+                                ->maxValue(999999999),
+                            Forms\Components\TextInput::make('number_words')
+                                ->label('Number of Words')
+                                ->required()
+                                ->numeric()
+                                ->minValue(1)
+                                ->maxValue(999999999),
 
-                        FileUpload::make('attachments')
+                            FileUpload::make('attachments')
+                                ->multiple()
+                                ->storeFileNamesIn('attachments_names')
+                                ->openable()
+                                ->downloadable()
+                                ->previewable(true)
+                                ->directory('proofreading_files')
+                                ->minFiles(1)
+                                ->maxFiles(5)
+                                ->maxSize(50000)
+                                ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'])
+                                ->validationMessages([
+                                    'acceptedFileTypes' => 'The :attribute .doc, .docx, and .pdf files are accepted.',
+                                    'maxFiles' => 'You cannot upload more than 5 files.',
+                                    'maxSize' => 'You cannot upload files more than 50mb in size.',
+                                ])
+                                ->live()
+                                ->afterStateUpdated(function (Forms\Contracts\HasForms $livewire, Forms\Components\FileUpload $component) { 
+                                    $livewire->validateOnly($component->getStatePath());
+                                }),
+                                ])
+
+                            ->columns(2),
+                        
+                    Tabs\Tab::make('Status')
+                        ->schema([
+                            Placeholder::make('created on')
+                            ->content(fn (ProofreadingRequest $record): string => $record->created_at->toFormattedDateString()),
+                            Placeholder::make('updated on')
+                            ->content(fn (ProofreadingRequest $record): string => $record->updated_at->toFormattedDateString()),
+
+                            Forms\Components\TextInput::make('proofreading_status')
+                            ->label('Current Status'),
+                            Forms\Components\MarkdownEditor::make('feedback')
+                            ->label('Feedback')
+                            ->columnSpanFull(),
+                            Forms\Components\FileUpload::make('attachments')
                             ->multiple()
                             ->storeFileNamesIn('attachments_names')
                             ->openable()
                             ->downloadable()
                             ->previewable(true)
                             ->directory('proofreading_files')
-                            ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']),
+                            ->columnSpanFull(),
                         ])
+                        ->hiddenOn(['create','edit'])
                         ->columns(2),
-                    
-                Tabs\Tab::make('Status')
-                    ->schema([
-                        Placeholder::make('created on')
-                        ->content(fn (ProofreadingRequest $record): string => $record->created_at->toFormattedDateString()),
-                        Placeholder::make('updated on')
-                        ->content(fn (ProofreadingRequest $record): string => $record->updated_at->toFormattedDateString()),
+                    ]),
+                ])
+                ->columns(1);
 
-                        Forms\Components\TextInput::make('proofreading_status')
-                        ->label('Current Status'),
-                        Forms\Components\MarkdownEditor::make('feedback')
-                        ->label('Feedback')
-                        ->columnSpanFull(),
-                        FileUpload::make('proofread_attachments')
-                        ->multiple()
-                        ->storeFileNamesIn('attachments_names')
-                        ->openable()
-                        ->downloadable()
-                        ->previewable(true)
-                        ->directory('proofreading_files')
-                        ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']),
-
-                    ])
-                    ->hiddenOn(['create','edit'])
-                    ->columns(2),
-                ]),
-            ])
-            ->columns(1);
     }
 
     public static function table(Table $table): Table
@@ -137,18 +148,18 @@ class ProofreadingRequestResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('projectSubmission.title')
                     ->searchable()
-                    ->limit(20)
+                    ->limit(30)
                     ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('owner.email')
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: false),
-                Tables\Columns\TextColumn::make('getProfessor.email')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('endorser.email')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('getExecutiveDirector.email')
+                Tables\Columns\TextColumn::make('executiveDirector.email')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('getProofreader.email')
+                Tables\Columns\TextColumn::make('proofreader.email')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('received_date')
@@ -181,11 +192,14 @@ class ProofreadingRequestResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: false),
             ])
             ->filters([
-                Tables\Filters\TrashedFilter::make(),
+                //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                ->hidden(fn ($record) => $record->trashed()),
+                Tables\Actions\EditAction::make()
+                ->hidden(fn ($record) => $record->trashed()),
+                Tables\Actions\RestoreAction::make()
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -199,7 +213,6 @@ class ProofreadingRequestResource extends Resource
         return [
             ProofreadingRequestResource\Widgets\ProofreadingRequestStatusHistory::class,
             ProofreadingRequestResource\Widgets\TeamMembers::class,
-            ProofreadingRequestResource\Widgets\Proofreaders::class,
         ];
     }
 
@@ -215,12 +228,15 @@ class ProofreadingRequestResource extends Resource
         return [
             'index' => Pages\ListProofreadingRequests::route('/'),
             'create' => Pages\CreateProofreadingRequest::route('/create'),
-            'view' => Pages\ViewProofreadingRequest::route('/{record}'),
             'edit' => Pages\EditProofreadingRequest::route('/{record}/edit'),
+            'view' => Pages\ViewProofreadingRequest::route('/{record}'),
         ];
     }
+
     public static function getEloquentQuery(): Builder
     {
+
+
         $roles = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
         ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
         ->where('users.id', Auth()->id())
@@ -229,37 +245,28 @@ class ProofreadingRequestResource extends Resource
 
         if ((in_array('Proofreader', $roles)))
         {
-            return parent::getEloquentQuery()->where('proofreader_id', Auth()->id())
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);     
+            return parent::getEloquentQuery()->where('proofreader_id', Auth()->id());     
+        }
+        elseif((in_array('Student', $roles)))
+        {
+            $teams = UserTeam::where('user_id', auth()->id())->pluck('team_id')->toArray();
+            $projects = ProjectSubmission::whereIn('team_id', $teams)->pluck('id');
+            return parent::getEloquentQuery()->whereIn('project_submission_id', $projects);    
         }
         elseif ((in_array('Professor', $roles)))
         {
-            return parent::getEloquentQuery()->where('endorser_id', Auth()->id())
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]); 
+            return parent::getEloquentQuery()->where('endorser_id', Auth()->id()); 
         }
         elseif ((in_array('Executive Director', $roles)))
         {
-            return parent::getEloquentQuery()->where('executive_director_id', Auth()->id())
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+            return parent::getEloquentQuery()->where('executive_director_id', Auth()->id());
         }
         elseif ((in_array('English Cluster Head', $roles)))
         {
-            return parent::getEloquentQuery()->whereIn('status', ['approved','returned for assignment','assigned','returned for assignment','completed'])
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+            return parent::getEloquentQuery()->whereIn('status', ['approved','returned for assignment','assigned','returned for assignment','completed']);
         }
         else{
-            return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]); 
+            return parent::getEloquentQuery(); 
         }
     }
 }

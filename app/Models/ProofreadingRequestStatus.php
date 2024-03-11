@@ -17,6 +17,8 @@ class ProofreadingRequestStatus extends Model
         'type',
         'status',
         'feedback',
+        'attachments',
+        'attachments_names',
     ];
 
     protected $casts = [

@@ -10,14 +10,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use ShiftOneLabs\LaravelCascadeDeletes\CascadesDeletes;
 
 class ProofreadingRequest extends Model
 {
     use SoftDeletes;
     use HasFactory;
+    use CascadesDeletes;
+
     protected $fillable = [
         'project_submission_id',
-        'owner_id',
+        'team_id',
+        'school',
+        'program',
+        'section',
+        'subject',
+        'academic_year',
         'phone_number',
         'endorser_id',
         'executive_director_id',
@@ -48,7 +56,6 @@ class ProofreadingRequest extends Model
     {
         return $this->hasOne(ProofreadingRequestStatus::class, 'proofreading_request_id')->latest();
     }
-
     public function owner() : BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
@@ -64,6 +71,10 @@ class ProofreadingRequest extends Model
     public function executive_director() : BelongsTo
     {
         return $this->belongsTo(User::class, 'executive_director_id');
+    }
+    public function team() : BelongsTo
+    {
+        return $this->belongsTo(Team::class, 'team_id');
     }
     public function reviewer() : BelongsToMany
     {

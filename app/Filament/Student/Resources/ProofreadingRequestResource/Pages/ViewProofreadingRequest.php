@@ -22,6 +22,8 @@ class ViewProofreadingRequest extends ViewRecord
         if(!empty($this->record->latestStatus)){
             $data['proofreading_status'] = $this->record->latestStatus->status;
             $data['feedback'] = $this->record->latestStatus->feedback;
+            $data['attachments'] = $this->record->latestStatus->attachments;
+            $data['attachments_names'] = $this->record->latestStatus->attachments_names;
         }
         
         return $data;

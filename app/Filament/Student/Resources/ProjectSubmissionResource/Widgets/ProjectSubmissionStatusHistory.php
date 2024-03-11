@@ -47,7 +47,7 @@ class ProjectSubmissionStatusHistory extends BaseWidget
                         Forms\Components\Select::make('user')
                         ->relationship('user','email')
                         ->label('Email'),
-                        Forms\Components\TextInput::make('created_at'),
+                        Forms\Components\DateTimePicker::make('created_at'),
                         Forms\Components\MarkdownEditor::make('feedback')
                     ]),
             ])

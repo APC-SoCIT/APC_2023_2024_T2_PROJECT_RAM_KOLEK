@@ -17,7 +17,7 @@ class CreateProofreadingRequest extends CreateRecord
     protected function afterCreate(): void
     {
         ProofreadingRequest::where('id',$this->record->id)->update([
-            'owner_id' => auth()->user()->id,
+            'team_id' => $this->record->projectSubmission->team_id,
             'endorser_id' => $this->record->projectSubmission->professor_id,
         ]);
         ProofreadingRequestStatus::create([

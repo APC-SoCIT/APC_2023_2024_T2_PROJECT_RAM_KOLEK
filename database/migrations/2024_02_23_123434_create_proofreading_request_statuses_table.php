@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('type',25);
             $table->string('status',25);
             $table->string('feedback')->nullable();
-            $table->string('attachments')->nullable();
-            $table->string('attachments_names')->nullable();
+            $table->string('attachments',1000)->nullable();
+            $table->string('attachments_names',1000)->nullable();
             $table->timestamps();
         });
     }

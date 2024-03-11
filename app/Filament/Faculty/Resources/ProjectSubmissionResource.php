@@ -28,6 +28,8 @@ use Filament\Forms\Components\TextInput;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Tabs;
+use Illuminate\Validation\Rules\File;
+use Illuminate\Validation\Rule;
 
 class ProjectSubmissionResource extends Resource
 {
@@ -46,14 +48,6 @@ class ProjectSubmissionResource extends Resource
         $teams = Team::pluck('name', 'id')
         ->toArray();
 
-        $startYear = Carbon::now()->year;
-        $endYear = $startYear+5;
-        $academicYears = [];
-
-        for ($year = $startYear; $year <= $endYear; $year++) {
-            $academicYears["{$year}-" . ($year + 1)] = "{$year}-" . ($year + 1);
-        }
-        
         return $form
             ->schema([
                 Tabs::make('Tabs')
@@ -61,6 +55,8 @@ class ProjectSubmissionResource extends Resource
                 Tabs\Tab::make('Project Submission')
                     ->schema([
                         Forms\Components\TextInput::make('title')
+                        ->required()
+                        ->maxLength(255)
                         ->columnSpanFull(),
                         Forms\Components\Select::make('team_id')
                         ->label('Team')
@@ -73,16 +69,31 @@ class ProjectSubmissionResource extends Resource
                         ->searchable()
                         ->default(Auth()->user()->id)
                         ->required(),
+                        Forms\Components\TextInput::make('school')
+                        ->label('School')
+                        ->hiddenOn(['create'])
+                        ->disabledOn(['create', 'edit', 'view']),
+  
+                        Forms\Components\TextInput::make('program')
+                        ->label('Program')
+                        ->hiddenOn(['create'])
+                        ->disabledOn(['create', 'edit', 'view']),
+
+                        Forms\Components\TextInput::make('section')
+                        ->label('Section')
+                        ->hiddenOn(['create'])
+                        ->disabledOn(['create', 'edit', 'view']),
+                        Forms\Components\TextInput::make('academic_year')
+                        ->label('Academic Year')
+                        ->hiddenOn(['create'])
+                        ->disabledOn(['create', 'edit', 'view']),
+
                         Forms\Components\Select::make('subject')
                         ->options([
-                            'intsdev' => 'INTSDEV',
-                            'syadd' => 'SYADD',
-                            'csproj' => 'CSPROJ',
-                        ]),
-                        Forms\Components\Select::make('academic_year')
-                        ->label('Academic Year:')
-                        ->default("{$startYear}-" . ($startYear + 1))
-                        ->options($academicYears)
+                            'INTSDEV' => 'INTSDEV',
+                            'SYADD' => 'SYADD',
+                            'CSPROJ' => 'CSPROJ',
+                        ])
                         ->required(),
                         Forms\Components\Select::make('term')
                         ->label('Term')
@@ -106,8 +117,20 @@ class ProjectSubmissionResource extends Resource
                         ->downloadable()
                         ->previewable(true)
                         ->directory('project_files')
-                        ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']),
+                        ->maxFiles(5)
+                        ->maxSize(50000)
+                        ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'])
+                        ->validationMessages([
+                            'acceptedFileTypes' => 'The :attribute .doc, .docx, and .pdf files are accepted.',
+                            'maxFiles' => 'You cannot upload more than 5 files.',
+                            'maxSize' => 'You cannot upload files more than 50mb in size.',
                         ])
+                        ->live()
+                        ->afterStateUpdated(function (Forms\Contracts\HasForms $livewire, Forms\Components\FileUpload $component) { 
+                            $livewire->validateOnly($component->getStatePath());
+                        }), 
+                        ])
+
                         ->columns(2),
                     
                 Tabs\Tab::make('Status')
@@ -182,8 +205,11 @@ class ProjectSubmissionResource extends Resource
 
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                ->hidden(fn ($record) => $record->trashed()),
+                Tables\Actions\EditAction::make()
+                ->hidden(fn ($record) => $record->trashed()),
+                Tables\Actions\RestoreAction::make()
 
             ])
             ->bulkActions([
@@ -241,7 +267,7 @@ class ProjectSubmissionResource extends Resource
             return parent::getEloquentQuery()->where('status', 'approved');
         }
         else{
-            return parent::getEloquentQuery(); 
+            return parent::getEloquentQuery();
         }
     }
 

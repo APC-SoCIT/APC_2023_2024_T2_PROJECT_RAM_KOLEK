@@ -5,6 +5,7 @@ namespace App\Filament\Student\Resources;
 use App\Filament\Student\Resources\ProjectSubmissionResource\Pages;
 use App\Filament\Student\Resources\ProjectSubmissionResource\RelationManagers;
 use App\Models\User;
+use App\Models\UserTeam;
 use App\Models\ProjectSubmission;
 use App\Models\ProjectSubmissionStatus;
 use App\Models\ProofreadingRequest;
@@ -107,8 +108,11 @@ class ProjectSubmissionResource extends Resource
                         ->downloadable()
                         ->previewable(true)
                         ->directory('project_files')
+                        ->maxFiles(5)
+                        ->maxSize(50000)
                         ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']),
                         ])
+
                         ->columns(2),
                     
                 Tabs\Tab::make('Status')
@@ -228,10 +232,11 @@ class ProjectSubmissionResource extends Resource
         ];
     }
 
-    //public static function getEloquentQuery(): Builder
-    //{
-    //    $teams = Team::whereJsonContains('members',strval(Auth()->id()))->pluck('id');
-    //    return parent::getEloquentQuery()->whereIn('team_id', $teams);
-    //}
+    public static function getEloquentQuery(): Builder
+    {
+        $teams = UserTeam::where('user_id', auth()->id())->pluck('team_id')->toArray();
+        return parent::getEloquentQuery()->whereIn('team_id', $teams)
+; 
+    }
 
 }
