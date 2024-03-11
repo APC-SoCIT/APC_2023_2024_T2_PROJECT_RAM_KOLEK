@@ -61,6 +61,24 @@ class ProofreadingRequestResource extends Resource
                         ->tel()
                         ->required()
                         ->maxLength(15),
+                        Forms\Components\TextInput::make('school')
+                        ->label('School')
+                        ->hiddenOn(['create'])
+                        ->disabledOn(['create', 'edit', 'view']),
+  
+                        Forms\Components\TextInput::make('program')
+                        ->label('Program')
+                        ->hiddenOn(['create'])
+                        ->disabledOn(['create', 'edit', 'view']),
+
+                        Forms\Components\TextInput::make('section')
+                        ->label('Section')
+                        ->hiddenOn(['create'])
+                        ->disabledOn(['create', 'edit', 'view']),
+                        Forms\Components\TextInput::make('academic_year')
+                        ->label('Academic Year')
+                        ->hiddenOn(['create'])
+                        ->disabledOn(['create', 'edit', 'view']),
                     Forms\Components\Select::make('endorser_id')
                         ->label('Professor')
                         ->relationship('user','email')
@@ -98,7 +116,7 @@ class ProofreadingRequestResource extends Resource
                         ->directory('proofreading_files')
                         ->minFiles(1)
                         ->maxFiles(5)
-                        ->maxSize(50000)
+
                         ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'])
                         ->validationMessages([
                             'acceptedFileTypes' => 'The :attribute .doc, .docx, and .pdf files are accepted.',
@@ -150,16 +168,25 @@ class ProofreadingRequestResource extends Resource
                     ->searchable()
                     ->limit(30)
                     ->toggleable(isToggledHiddenByDefault: false),
-                Tables\Columns\TextColumn::make('owner.email')
+                Tables\Columns\TextColumn::make('team.name')
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('endorser.email')
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('executiveDirector.email')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('proofreader.email')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('school')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('program')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('academic_year')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('received_date')
@@ -168,6 +195,15 @@ class ProofreadingRequestResource extends Resource
                 Tables\Columns\TextColumn::make('released_date')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('latestStatus.status')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: false)
@@ -182,21 +218,16 @@ class ProofreadingRequestResource extends Resource
                         'returned for assignment' => 'warning',
                         'completed' => 'success',
                     }),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: false),
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                ->hidden(fn ($record) => $record->trashed()),
+                Tables\Actions\EditAction::make()
+                ->hidden(fn ($record) => $record->trashed()),
+                Tables\Actions\RestoreAction::make()
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -234,9 +265,6 @@ class ProofreadingRequestResource extends Resource
     {
         $teams = UserTeam::where('user_id', auth()->id())->pluck('team_id')->toArray();
         $projects = ProjectSubmission::whereIn('team_id', $teams)->pluck('id');
-        return parent::getEloquentQuery()->whereIn('project_submission_id', $projects)
-        ->withoutGlobalScopes([
-            SoftDeletingScope::class,
-        ]); 
+        return parent::getEloquentQuery()->whereIn('project_submission_id', $projects); 
     }
 }

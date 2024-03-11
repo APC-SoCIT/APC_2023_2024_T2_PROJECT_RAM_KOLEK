@@ -424,8 +424,7 @@ class ViewProofreadingRequest extends ViewRecord
                         return $visible;
                     }),
                     //proofreader return
-                    CreateAction::make('Complete')
-                    ->model(ProofreadingRequestStatus::class)
+                    Action::make('Complete')
                     ->color('success')
                     ->requiresConfirmation()
                     ->form([

@@ -5,6 +5,9 @@ namespace App\Filament\Student\Resources\ProofreadingRequestResource\Pages;
 use App\Filament\Student\Resources\ProofreadingRequestResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Components\Tab;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\ProofreadingRequest;
 
 class ListProofreadingRequests extends ListRecords
 {
@@ -15,5 +18,21 @@ class ListProofreadingRequests extends ListRecords
         return [
             Actions\CreateAction::make(),
         ];
+    }
+    public function getTabs(): array
+    {
+        $tabs = [];
+        $tabs['all'] = Tab::make('All')
+        ->badge(ProofreadingRequest::count());
+        $tabs['pending'] = Tab::make('Pending')
+        ->modifyQueryUsing((fn (Builder $query) => $query->whereNot('status','completed')))
+        ->badge(ProofreadingRequest::where('status','pending')->count());
+        $tabs['complete'] = Tab::make('Complete')
+        ->modifyQueryUsing((fn (Builder $query) => $query->where('status','completed')))
+        ->badge(ProofreadingRequest::where('status','completed')->count());
+        $tabs['archived'] = Tab::make('Archived')
+        ->modifyQueryUsing((fn (Builder $query) => $query->onlyTrashed()))
+        ->badge(ProofreadingRequest::onlyTrashed()->count());
+        return $tabs;
     }
 }

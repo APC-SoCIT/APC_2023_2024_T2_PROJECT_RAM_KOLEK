@@ -162,9 +162,6 @@ class ProjectSubmissionResource extends Resource
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: false)
                     ->limit(20),
-                Tables\Columns\TextColumn::make('categories')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('subject')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: false),
@@ -175,13 +172,22 @@ class ProjectSubmissionResource extends Resource
                 Tables\Columns\TextColumn::make('team.name')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: false),
+                Tables\Columns\TextColumn::make('school')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('program')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('section')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('academic_year')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('term')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -190,6 +196,21 @@ class ProjectSubmissionResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
+                Tables\Columns\TextColumn::make('proofreadingRequestStatus.status')
+                    ->label('Proofreading Status')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: false)
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'gray',
+                        'endorsed' => 'info',
+                        'approved' => 'info',
+                        'assigned' => 'info',
+                        'returned for endorsement' => 'warning',
+                        'returned for approval' => 'warning',
+                        'returned for assignment' => 'warning',
+                        'completed' => 'success',
+                    }),
                 Tables\Columns\TextColumn::make('status')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: false)

@@ -26,11 +26,11 @@ class ListProofreadingRequests extends ListRecords
         $tabs['all'] = Tab::make('All')
         ->badge(ProofreadingRequest::count());
         $tabs['pending'] = Tab::make('Pending')
-        ->modifyQueryUsing((fn (Builder $query) => $query->whereNot('status','complete')))
+        ->modifyQueryUsing((fn (Builder $query) => $query->whereNot('status','completed')))
         ->badge(ProofreadingRequest::where('status','pending')->count());
         $tabs['complete'] = Tab::make('Complete')
-        ->modifyQueryUsing((fn (Builder $query) => $query->where('status','complete')))
-        ->badge(ProofreadingRequest::where('status','complete')->count());
+        ->modifyQueryUsing((fn (Builder $query) => $query->where('status','completed')))
+        ->badge(ProofreadingRequest::where('status','completed')->count());
         $tabs['archived'] = Tab::make('Archived')
         ->modifyQueryUsing((fn (Builder $query) => $query->onlyTrashed()))
         ->badge(ProofreadingRequest::onlyTrashed()->count());

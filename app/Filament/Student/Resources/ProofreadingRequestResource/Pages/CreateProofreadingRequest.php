@@ -19,6 +19,10 @@ class CreateProofreadingRequest extends CreateRecord
         ProofreadingRequest::where('id',$this->record->id)->update([
             'team_id' => $this->record->projectSubmission->team_id,
             'endorser_id' => $this->record->projectSubmission->professor_id,
+            'school' => $this->record->projectSubmission->school,
+            'program' => $this->record->projectSubmission->program,
+            'section' => $this->record->projectSubmission->section,
+            'academic_year' => $this->record->projectSubmission->academic_year,
         ]);
         ProofreadingRequestStatus::create([
             'proofreading_request_id' => $this->record->id,

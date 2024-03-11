@@ -5,6 +5,9 @@ namespace App\Filament\Faculty\Resources\TeamResource\Pages;
 use App\Filament\Faculty\Resources\TeamResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Components\Tab;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\Team;
 
 class ListTeams extends ListRecords
 {
@@ -15,5 +18,16 @@ class ListTeams extends ListRecords
         return [
             Actions\CreateAction::make(),
         ];
+    }
+
+    public function getTabs(): array
+    {
+        $tabs = [];
+        $tabs['all'] = Tab::make('All')
+        ->badge(Team::count());
+        $tabs['archived'] = Tab::make('Archived')
+        ->modifyQueryUsing((fn (Builder $query) => $query->onlyTrashed()))
+        ->badge(Team::onlyTrashed()->count());
+        return $tabs;
     }
 }

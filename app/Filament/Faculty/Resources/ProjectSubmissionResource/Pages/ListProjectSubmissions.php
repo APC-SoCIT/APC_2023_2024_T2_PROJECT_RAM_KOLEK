@@ -29,8 +29,8 @@ class ListProjectSubmissions extends ListRecords
         ->modifyQueryUsing((fn (Builder $query) => $query->where('status','pending')))
         ->badge(ProjectSubmission::where('status','pending')->count());
         $tabs['complete'] = Tab::make('Complete')
-        ->modifyQueryUsing((fn (Builder $query) => $query->where('status','complete')))
-        ->badge(ProjectSubmission::where('status','complete')->count());
+        ->modifyQueryUsing((fn (Builder $query) => $query->where('status','approved')))
+        ->badge(ProjectSubmission::where('status','approved')->count());
         $tabs['archived'] = Tab::make('Archived')
         ->modifyQueryUsing((fn (Builder $query) => $query->onlyTrashed()))
         ->badge(ProjectSubmission::onlyTrashed()->count());
