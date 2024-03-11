@@ -9,11 +9,13 @@ use app\Models\User;
 use app\Models\ProjectSubmission;
 
 class RegisteredUsersChart extends ChartWidget
-{
+{   
+    protected static ?int $sort = 2;
     protected static ?string $heading = 'User Count Chart';
 
     protected function getData(): array
     {
+        
         $data = Trend::model(model:User::class)
         ->between(
             now()->subMonths(5),
