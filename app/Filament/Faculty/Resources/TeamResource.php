@@ -109,8 +109,6 @@ class TeamResource extends Resource
 
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
-                ->hidden(fn ($record) => $record->trashed()),
                 Tables\Actions\EditAction::make()
                 ->hidden(fn ($record) => $record->trashed()),
                 Tables\Actions\RestoreAction::make()
