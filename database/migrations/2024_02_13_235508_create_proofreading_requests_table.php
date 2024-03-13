@@ -14,7 +14,11 @@ return new class extends Migration
         Schema::create('proofreading_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('project_submission_id')->constrained('project_submissions');
-            $table->foreignId('owner_id')->constrained('users');
+            $table->foreignId('team_id')->constrained('teams')->cascadeOnDelete()->nullable();
+            $table->string('school')->nullable();
+            $table->string('program')->nullable();
+            $table->string('academic_year', 10)->nullable();
+            $table->string('section')->nullable();
             $table->string('phone_number', 15);
             $table->foreignId('endorser_id')->nullable()->constrained('users')->nullable();
             $table->foreignId('executive_director_id')->nullable()->constrained('users');
@@ -23,8 +27,8 @@ return new class extends Migration
             $table->string('number_words', 10);
             $table->string('received_date')->nullable();
             $table->string('released_date')->nullable();
-            $table->string('attachments')->nullable();
-            $table->string('attachments_names')->nullable();
+            $table->string('attachments',1000)->nullable();
+            $table->string('attachments_names',1000)->nullable();
             $table->string('status')->default('pending');
             $table->softDeletes();
             $table->timestamps();

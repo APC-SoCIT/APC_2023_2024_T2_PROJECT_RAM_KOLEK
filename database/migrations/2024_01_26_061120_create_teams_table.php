@@ -15,6 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users');
             $table->string('name');
+            $table->string('school');
+            $table->string('program');
+            $table->string('academic_year', 10);
+            $table->string('section');
             $table->softDeletes();
             $table->timestamps();
         });

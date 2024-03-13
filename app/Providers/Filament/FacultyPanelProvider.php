@@ -40,10 +40,8 @@ class FacultyPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Faculty/Widgets'), for: 'App\\Filament\\Faculty\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
                 StatsOverview::class,
                 RegisteredUsersChart::class,
-                
             ])
             ->middleware([
                 EncryptCookies::class,

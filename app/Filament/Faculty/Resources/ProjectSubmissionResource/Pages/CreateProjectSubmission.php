@@ -6,6 +6,7 @@ use App\Filament\Faculty\Resources\ProjectSubmissionResource;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use App\Models\ProjectSubmissionStatus;
+use App\Models\ProjectSubmission;
 use App\Models\User;
 use App\Models\UserTeam;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,12 @@ class CreateProjectSubmission extends CreateRecord
             'user_id' => auth()->user()->id,
             'status' => 'pending',
             'type' => 'professor',
+        ]);
+        ProjectSubmission::where('id',$this->record->id)->update([
+            'school' => $this->record->team->school,
+            'program' => $this->record->team->program,
+            'section' => $this->record->team->section,
+            'academic_year' => $this->record->team->academic_year,
         ]);
     }
     protected function getCreatedNotification(): ?Notification

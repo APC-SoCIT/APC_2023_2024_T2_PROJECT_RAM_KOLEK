@@ -5,6 +5,9 @@ namespace App\Filament\Student\Resources\ProjectSubmissionResource\Pages;
 use App\Filament\Student\Resources\ProjectSubmissionResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Components\Tab;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\ProjectSubmission;
 
 class ListProjectSubmissions extends ListRecords
 {
@@ -15,5 +18,21 @@ class ListProjectSubmissions extends ListRecords
         return [
             Actions\CreateAction::make(),
         ];
+    }
+    public function getTabs(): array
+    {
+        $tabs = [];
+        $tabs['all'] = Tab::make('All')
+        ->badge(ProjectSubmission::count());
+        $tabs['pending'] = Tab::make('Pending')
+        ->modifyQueryUsing((fn (Builder $query) => $query->where('status','pending')))
+        ->badge(ProjectSubmission::where('status','pending')->count());
+        $tabs['complete'] = Tab::make('Complete')
+        ->modifyQueryUsing((fn (Builder $query) => $query->where('status','approved')))
+        ->badge(ProjectSubmission::where('status','approved')->count());
+        $tabs['archived'] = Tab::make('Archived')
+        ->modifyQueryUsing((fn (Builder $query) => $query->onlyTrashed()))
+        ->badge(ProjectSubmission::onlyTrashed()->count());
+        return $tabs;
     }
 }

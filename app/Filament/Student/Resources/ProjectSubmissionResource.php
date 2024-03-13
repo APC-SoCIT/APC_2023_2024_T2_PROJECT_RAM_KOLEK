@@ -5,6 +5,7 @@ namespace App\Filament\Student\Resources;
 use App\Filament\Student\Resources\ProjectSubmissionResource\Pages;
 use App\Filament\Student\Resources\ProjectSubmissionResource\RelationManagers;
 use App\Models\User;
+use App\Models\UserTeam;
 use App\Models\ProjectSubmission;
 use App\Models\ProjectSubmissionStatus;
 use App\Models\ProofreadingRequest;
@@ -53,37 +54,53 @@ class ProjectSubmissionResource extends Resource
             ->schema([
                 Tabs::make('Tabs')
                 ->tabs([
-                Tabs\Tab::make('Proofreading Request')
+                Tabs\Tab::make('Project Submission')
                     ->schema([
                         Forms\Components\TextInput::make('title')
+                        ->required()
+                        ->maxLength(255)
                         ->columnSpanFull()
-                        ->disabled(),
+                        ->disabledOn(['create', 'edit', 'view']),
                         Forms\Components\Select::make('team_id')
                         ->label('Team')
                         ->options($teams)
                         ->searchable()
                         ->required()
-                        ->disabled(),
+                        ->disabledOn(['create', 'edit', 'view']),
                         Forms\Components\Select::make('professor_id')
                         ->label('Professor')
                         ->options($options)
                         ->searchable()
                         ->default(Auth()->user()->id)
                         ->required()
-                        ->disabled(),
+                        ->disabledOn(['create', 'edit', 'view']),
+                        Forms\Components\TextInput::make('school')
+                        ->label('School')
+                        ->hiddenOn(['create'])
+                        ->disabledOn(['create', 'edit', 'view']),
+  
+                        Forms\Components\TextInput::make('program')
+                        ->label('Program')
+                        ->hiddenOn(['create'])
+                        ->disabledOn(['create', 'edit', 'view']),
+
+                        Forms\Components\TextInput::make('section')
+                        ->label('Section')
+                        ->hiddenOn(['create'])
+                        ->disabledOn(['create', 'edit', 'view']),
+                        Forms\Components\TextInput::make('academic_year')
+                        ->label('Academic Year')
+                        ->hiddenOn(['create'])
+                        ->disabledOn(['create', 'edit', 'view']),
+
                         Forms\Components\Select::make('subject')
                         ->options([
-                            'intsdev' => 'INTSDEV',
-                            'syadd' => 'SYADD',
-                            'csproj' => 'CSPROJ',
+                            'INTSDEV' => 'INTSDEV',
+                            'SYADD' => 'SYADD',
+                            'CSPROJ' => 'CSPROJ',
                         ])
-                        ->disabled(),
-                        Forms\Components\Select::make('academic_year')
-                        ->label('Academic Year:')
-                        ->default("{$startYear}-" . ($startYear + 1))
-                        ->options($academicYears)
                         ->required()
-                        ->disabled(),
+                        ->disabledOn(['create', 'edit', 'view']),
                         Forms\Components\Select::make('term')
                         ->label('Term')
                         ->options([
@@ -93,7 +110,7 @@ class ProjectSubmissionResource extends Resource
                         ])
                         ->default('1')
                         ->required()
-                        ->disabled(),
+                        ->disabledOn(['create', 'edit', 'view']),
                         Forms\Components\Select::make('categories')
                         ->relationship('categories','name')
                         ->multiple()
@@ -107,8 +124,20 @@ class ProjectSubmissionResource extends Resource
                         ->downloadable()
                         ->previewable(true)
                         ->directory('project_files')
-                        ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']),
+                        ->maxFiles(5)
+
+                        ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'])
+                        ->validationMessages([
+                            'acceptedFileTypes' => 'The :attribute .doc, .docx, and .pdf files are accepted.',
+                            'maxFiles' => 'You cannot upload more than 5 files.',
+                            'maxSize' => 'You cannot upload files more than 50mb in size.',
                         ])
+                        ->live()
+                        ->afterStateUpdated(function (Forms\Contracts\HasForms $livewire, Forms\Components\FileUpload $component) { 
+                            $livewire->validateOnly($component->getStatePath());
+                        }), 
+                        ])
+
                         ->columns(2),
                     
                 Tabs\Tab::make('Status')
@@ -138,33 +167,32 @@ class ProjectSubmissionResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false)
                     ->limit(20),
-                Tables\Columns\TextColumn::make('categories')
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('subject')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('professor.email')
                     ->label('Professor')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('team.name')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
+                Tables\Columns\TextColumn::make('school')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('program')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('section')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('academic_year')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('term')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -175,9 +203,23 @@ class ProjectSubmissionResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
+                Tables\Columns\TextColumn::make('proofreadingRequestStatus.status')
+                    ->label('Proofreading Status')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: false)
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'gray',
+                        'endorsed' => 'info',
+                        'approved' => 'info',
+                        'assigned' => 'info',
+                        'returned for endorsement' => 'warning',
+                        'returned for approval' => 'warning',
+                        'returned for assignment' => 'warning',
+                        'completed' => 'success',
+                    }),
                 Tables\Columns\TextColumn::make('status')
                     ->searchable()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false)
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -191,8 +233,11 @@ class ProjectSubmissionResource extends Resource
 
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                ->hidden(fn ($record) => $record->trashed()),
+                Tables\Actions\EditAction::make()
+                ->hidden(fn ($record) => $record->trashed()),
+                Tables\Actions\RestoreAction::make()
 
             ])
             ->bulkActions([
@@ -228,10 +273,11 @@ class ProjectSubmissionResource extends Resource
         ];
     }
 
-    //public static function getEloquentQuery(): Builder
-    //{
-    //    $teams = Team::whereJsonContains('members',strval(Auth()->id()))->pluck('id');
-    //    return parent::getEloquentQuery()->whereIn('team_id', $teams);
-    //}
+    public static function getEloquentQuery(): Builder
+    {
+        $teams = UserTeam::where('user_id', auth()->id())->pluck('team_id')->toArray();
+        return parent::getEloquentQuery()->whereIn('team_id', $teams)
+; 
+    }
 
 }

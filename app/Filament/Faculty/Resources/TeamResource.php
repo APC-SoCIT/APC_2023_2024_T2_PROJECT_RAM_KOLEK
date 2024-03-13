@@ -6,6 +6,7 @@ use App\Filament\Faculty\Resources\TeamResource\Pages;
 use App\Filament\Faculty\Resources\TeamResource\RelationManagers;
 use App\Models\Team;
 use App\Models\User;
+use App\Models\UserTeam;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,6 +14,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Carbon\Carbon;
 
 class TeamResource extends Resource
 {
@@ -22,6 +24,13 @@ class TeamResource extends Resource
 
     public static function form(Form $form): Form
     {
+        $startYear = Carbon::now()->year;
+        $endYear = $startYear+5;
+        $academicYears = [];
+
+        for ($year = $startYear; $year <= $endYear; $year++) {
+            $academicYears["{$year}-" . ($year + 1)] = "{$year}-" . ($year + 1);
+        }
         return $form
             ->schema([
                 Forms\Components\Select::make('user_id')
@@ -35,6 +44,27 @@ class TeamResource extends Resource
                     ->label('Team Name')
                     ->required()
                     ->maxLength(255),
+                Forms\Components\Select::make('school')
+                    ->placeholder('Select School')
+                    ->options([
+                        'School of Computing and Information Technology'  => 'School of Computing and Information Technology' 
+                    ])
+                    ->required(),
+                Forms\Components\Select::make('program')
+                ->placeholder('Select Program')
+                ->options([
+                    'BS Computer Science' => 'BS Computer Science',
+                    'BS Information Technology' => 'BS Information Technology' 
+                ])
+                ->required(),
+                Forms\Components\Select::make('academic_year')
+                ->label('Academic Year:')
+                ->default("{$startYear}-" . ($startYear + 1))
+                ->options($academicYears)
+                ->required(),
+                Forms\Components\TextInput::make('section')
+                ->maxLength(255)
+                ->required(),
                 Forms\Components\Select::make('members')
                     ->label('Members')
                     ->placeholder('Select Members')
@@ -42,6 +72,8 @@ class TeamResource extends Resource
                     ->multiple()
                     ->relationship('members','email')
                     ->preload(),
+
+
             ]);
     }
 
@@ -56,6 +88,14 @@ class TeamResource extends Resource
                 Tables\Columns\TextColumn::make('owner.email')
                     ->label('Owner')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('school')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('program')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('section')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('academic_year')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -66,10 +106,12 @@ class TeamResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TrashedFilter::make(),
+
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                ->hidden(fn ($record) => $record->trashed()),
+                Tables\Actions\RestoreAction::make()
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -106,16 +148,14 @@ class TeamResource extends Resource
 
         if ((in_array('Professor', $roles)))
         {
-            return parent::getEloquentQuery()->where('user_id', Auth()->id())
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+            return parent::getEloquentQuery()->where('user_id', Auth()->id());
+        }
+        elseif ((in_array('Student', $roles)))
+        {
+            $teams = UserTeam::where('user_id', auth()->id())->pluck('team_id')->toArray();;
         }
         else{
-            return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+            return parent::getEloquentQuery();
         }
 
     }

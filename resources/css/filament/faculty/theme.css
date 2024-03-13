@@ -51,6 +51,10 @@
     @apply bg-slate-100/10 !important;
 }
 
+.fi-tabs-item:hover {
+    @apply bg-slate-100/10 !important;
+}
+
 .fi-ta-header-ctn {
     @apply bg-blue-900 !important;
 }

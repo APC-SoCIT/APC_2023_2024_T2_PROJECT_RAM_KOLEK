@@ -17,9 +17,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Notifications\Notification;
+use Filament\Actions\CreateAction;
+use Illuminate\Validation\Rules\File;
+use Illuminate\Validation\Rule;
 
 
 class ViewProofreadingRequest extends ViewRecord
@@ -38,8 +42,8 @@ class ViewProofreadingRequest extends ViewRecord
         if(!empty($this->record->latestStatus)){
             $data['proofreading_status'] = $this->record->latestStatus->status;
             $data['feedback'] = $this->record->latestStatus->feedback;
-            $data['proofread_attachments'] = $this->record->latestStatus->attachments;
-            $data['proofread_attachments'] = $this->record->latestStatus->attachments_names;
+            $data['attachments'] = $this->record->latestStatus->attachments;
+            $data['attachments_names'] = $this->record->latestStatus->attachments_names;
         }
         
         return $data;
@@ -66,6 +70,21 @@ class ViewProofreadingRequest extends ViewRecord
                         RichEditor::make('feedback')
                         ->maxLength('255')
                         ->disableAllToolbarButtons(),
+                        FileUpload::make('attachments')
+                        ->multiple()
+                        ->storeFileNamesIn('attachments_names')
+                        ->openable()
+                        ->downloadable()
+                        ->previewable(true)
+                        ->directory('proofreading_files')
+                        ->maxSize(50000)
+                        ->maxFiles(5)
+                        ->acceptedFileTypes(['image/jpeg','image/png','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'])
+                        ->validationMessages([
+                            'acceptedFileTypes' => 'The :attribute .doc, .docx, .pdf, .jpg, and .png files are accepted.',
+                            'maxFiles' => 'You cannot upload more than 5 files.',
+                            'maxSize' => 'You cannot upload files more than 50mb in size.',
+                        ]),
                     ])
                     ->action(function (array $data) {
                         $usersTeam = UserTeam::where('team_id', $this->record->projectSubmission->team_id)->pluck('user_id')->toArray();
@@ -78,6 +97,8 @@ class ViewProofreadingRequest extends ViewRecord
                             'status' => 'endorsed',
                             'type' => 'professor',
                             'feedback' => $data['feedback'],
+                            'attachments' => $data['attachments'],
+                            'attachments_names' => $data['attachments_names'],
                         ]),
                         ProofreadingRequest::where('id',$this->record->id)->update([
                             'status' => 'endorsed',
@@ -106,7 +127,22 @@ class ViewProofreadingRequest extends ViewRecord
                     ->form([
                         RichEditor::make('feedback')
                         ->maxLength('255')
-                        ->disableAllToolbarButtons()
+                        ->disableAllToolbarButtons(),
+                        FileUpload::make('attachments')
+                        ->multiple()
+                        ->storeFileNamesIn('attachments_names')
+                        ->openable()
+                        ->downloadable()
+                        ->previewable(true)
+                        ->directory('proofreading_files')
+                        ->maxSize(50000)
+                        ->maxFiles(5)
+                        ->acceptedFileTypes(['image/jpeg','image/png','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'])
+                        ->validationMessages([
+                            'acceptedFileTypes' => 'The :attribute .doc, .docx, and .pdf files are accepted.',
+                            'maxFiles' => 'You cannot upload more than 5 files.',
+                            'maxSize' => 'You cannot upload files more than 50mb in size.',
+                        ]),
                     ])
                     ->action(function (array $data) {
                         $usersTeam = UserTeam::where('team_id', $this->record->projectSubmission->team_id)->pluck('user_id')->toArray();
@@ -119,6 +155,8 @@ class ViewProofreadingRequest extends ViewRecord
                             'status' => 'returned for endorsement',
                             'type' => 'professor',
                             'feedback' => $data['feedback'],
+                            'attachments' => $data['attachments'],
+                            'attachments_names' => $data['attachments_names'],
                         ]),
                         ProofreadingRequest::where('id',$this->record->id)->update([
                             'status' => 'returned for endorsement',
@@ -146,7 +184,22 @@ class ViewProofreadingRequest extends ViewRecord
                     ->form([
                         RichEditor::make('feedback')
                         ->maxLength('255')
-                        ->disableAllToolbarButtons()
+                        ->disableAllToolbarButtons(),
+                        FileUpload::make('attachments')
+                        ->multiple()
+                        ->storeFileNamesIn('attachments_names')
+                        ->openable()
+                        ->downloadable()
+                        ->previewable(true)
+                        ->directory('proofreading_files')
+                        ->maxSize(50000)
+                        ->maxFiles(5)
+                        ->acceptedFileTypes(['image/jpeg','image/png','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'])
+                        ->validationMessages([
+                            'acceptedFileTypes' => 'The :attribute .doc, .docx, .pdf, .jpg, and .png files are accepted.',
+                            'maxFiles' => 'You cannot upload more than 5 files.',
+                            'maxSize' => 'You cannot upload files more than 50mb in size.',
+                        ]),
                     ])
                     ->action(function (array $data) {
                         $usersTeam = UserTeam::where('team_id', $this->record->projectSubmission->team_id)->pluck('user_id')->toArray();
@@ -164,6 +217,8 @@ class ViewProofreadingRequest extends ViewRecord
                             'status' => 'approved',
                             'type' => 'executive director',
                             'feedback' => $data['feedback'],
+                            'attachments' => $data['attachments'],
+                            'attachments_names' => $data['attachments_names'],
                         ]),
                         ProofreadingRequest::where('id',$this->record->id)->update([
                             'status' => 'approved',
@@ -191,7 +246,22 @@ class ViewProofreadingRequest extends ViewRecord
                     ->form([
                         RichEditor::make('feedback')
                         ->maxLength('255')
-                        ->disableAllToolbarButtons()
+                        ->disableAllToolbarButtons(),
+                        FileUpload::make('attachments')
+                        ->multiple()
+                        ->storeFileNamesIn('attachments_names')
+                        ->openable()
+                        ->downloadable()
+                        ->previewable(true)
+                        ->directory('proofreading_files')
+                        ->maxSize(50000)
+                        ->maxFiles(5)
+                        ->acceptedFileTypes(['image/jpeg','image/png','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'])
+                        ->validationMessages([
+                            'acceptedFileTypes' => 'The :attribute .doc, .docx, .pdf, .jpg, and .png files are accepted.',
+                            'maxFiles' => 'You cannot upload more than 5 files.',
+                            'maxSize' => 'You cannot upload files more than 50mb in size.',
+                        ]),
                     ])
                     ->action(function (array $data) {
                         $usersTeam = UserTeam::where('team_id', $this->record->projectSubmission->team_id)->pluck('user_id')->toArray();
@@ -208,6 +278,8 @@ class ViewProofreadingRequest extends ViewRecord
                             'status' => 'returned for approval',
                             'type' => 'executive director',
                             'feedback' => $data['feedback'],
+                            'attachments' => $data['attachments'],
+                            'attachments_names' => $data['attachments_names'],
                         ]),
                         ProofreadingRequest::where('id',$this->record->id)->update([
                             'status' => 'returned for approval',
@@ -237,6 +309,21 @@ class ViewProofreadingRequest extends ViewRecord
                         RichEditor::make('feedback')
                         ->maxLength('255')
                         ->disableAllToolbarButtons(),
+                        FileUpload::make('attachments')
+                        ->multiple()
+                        ->storeFileNamesIn('attachments_names')
+                        ->openable()
+                        ->downloadable()
+                        ->previewable(true)
+                        ->directory('proofreading_files')
+                        ->maxSize(50000)
+                        ->maxFiles(5)
+                        ->acceptedFileTypes(['image/jpeg','image/png','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'])
+                        ->validationMessages([
+                            'acceptedFileTypes' => 'The :attribute .doc, .docx, .pdf, .jpg, and .png files are accepted.',
+                            'maxFiles' => 'You cannot upload more than 5 files.',
+                            'maxSize' => 'You cannot upload files more than 50mb in size.',
+                        ]),
                     ])
                     ->action(function (array $data) {
                         $usersTeam = UserTeam::where('team_id', $this->record->projectSubmission->team_id)->pluck('user_id')->toArray();
@@ -254,6 +341,8 @@ class ViewProofreadingRequest extends ViewRecord
                             'status' => 'assigned',
                             'type' => 'english cluster head',
                             'feedback' => $data['feedback'],
+                            'attachments' => $data['attachments'],
+                            'attachments_names' => $data['attachments_names'],
                         ]),
                         ProofreadingRequest::where('id',$this->record->id)->update([
                             'status' => 'assigned',
@@ -281,7 +370,22 @@ class ViewProofreadingRequest extends ViewRecord
                     ->form([
                         RichEditor::make('feedback')
                         ->maxLength('255')
-                        ->disableAllToolbarButtons()
+                        ->disableAllToolbarButtons(),
+                        FileUpload::make('attachments')
+                        ->multiple()
+                        ->storeFileNamesIn('attachments_names')
+                        ->openable()
+                        ->downloadable()
+                        ->previewable(true)
+                        ->directory('proofreading_files')
+                        ->maxSize(50000)
+                        ->maxFiles(5)
+                        ->acceptedFileTypes(['image/jpeg','image/png','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'])
+                        ->validationMessages([
+                            'acceptedFileTypes' => 'The :attribute .doc, .docx, .pdf, .jpg, and .png files are accepted.',
+                            'maxFiles' => 'You cannot upload more than 5 files.',
+                            'maxSize' => 'You cannot upload files more than 50mb in size.',
+                        ]),
                     ])
                     ->action(function (array $data) {
                         $usersTeam = UserTeam::where('team_id', $this->record->projectSubmission->team_id)->pluck('user_id')->toArray();
@@ -299,6 +403,8 @@ class ViewProofreadingRequest extends ViewRecord
                             'status' => 'returned for assignment',
                             'type' => 'english cluster head',
                             'feedback' => $data['feedback'],
+                            'attachments' => $data['attachments'],
+                            'attachments_names' => $data['attachments_names'],
                         ]),
                         ProofreadingRequest::where('id',$this->record->id)->update([
                             'status' => 'returned for assignment',
@@ -322,6 +428,9 @@ class ViewProofreadingRequest extends ViewRecord
                     ->color('success')
                     ->requiresConfirmation()
                     ->form([
+                        RichEditor::make('feedback')
+                        ->maxLength('255')
+                        ->disableAllToolbarButtons(),
                         FileUpload::make('attachments')
                         ->multiple()
                         ->storeFileNamesIn('attachments_names')
@@ -329,10 +438,14 @@ class ViewProofreadingRequest extends ViewRecord
                         ->downloadable()
                         ->previewable(true)
                         ->directory('proofreading_files')
-                        ->acceptedFileTypes(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']),
-                        RichEditor::make('feedback')
-                        ->maxLength('255')
-                        ->disableAllToolbarButtons(),
+                        ->maxSize(50000)
+                        ->maxFiles(5)
+                        ->acceptedFileTypes(['image/jpeg','image/png','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'])
+                        ->validationMessages([
+                            'acceptedFileTypes' => 'The :attribute .doc, .docx, .pdf, .jpg, and .png files are accepted.',
+                            'maxFiles' => 'You cannot upload more than 5 files.',
+                            'maxSize' => 'You cannot upload files more than 50mb in size.',
+                        ]),
                     ])
                     ->action(function (array $data) {
                         $usersTeam = UserTeam::where('team_id', $this->record->projectSubmission->team_id)->pluck('user_id')->toArray();
@@ -351,6 +464,7 @@ class ViewProofreadingRequest extends ViewRecord
                             'type' => 'proofreader',
                             'feedback' => $data['feedback'],
                             'attachments' => $data['attachments'],
+                            'attachments_names' => $data['attachments_names'],
                         ]),
                         ProofreadingRequest::where('id',$this->record->id)->update([
                             'status' => 'completed',
@@ -373,4 +487,5 @@ class ViewProofreadingRequest extends ViewRecord
         ];
     }
     
+
 }
